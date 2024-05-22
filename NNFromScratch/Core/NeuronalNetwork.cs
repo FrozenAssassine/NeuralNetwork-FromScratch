@@ -1,4 +1,6 @@
 ﻿using NNFromScratch.Helper;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace NNFromScratch.Core;
 
@@ -10,60 +12,46 @@ internal class NeuronalNetwork
 
     public NeuronalNetwork(int inputs, int hidden, int outputs)
     {
-        hiddenLayer = new Neuron[hidden];
-        for (int i = 0; i < hidden; i++)
-        {
-            hiddenLayer[i] = new Neuron(MathHelper.RandomBias());
-        }
+        //initialize the allWeights array:
+        WeightHelper.Init(inputs * hidden + hidden * outputs);
+        Console.WriteLine("Number of weights: " + WeightHelper.AllWeights.Length);
+
+        int weightIndexCounter = 0;
 
         inputLayer = new Neuron[inputs];
         for(int i = 0; i< inputs; i++)
         {
-            var inputNeuron = new Neuron(MathHelper.RandomBias());
-            for (int j = 0; j< hidden; j++)
-            {
-                NeuronLink link = new NeuronLink(MathHelper.RandomWeight(), inputNeuron, hiddenLayer[j]);
-                inputNeuron.links.Add(link);
-            }
-            inputLayer[i] = inputNeuron;
+            inputLayer[i] = new Neuron(weightIndexCounter++, MathHelper.RandomBias());
+        }
+
+        hiddenLayer = new Neuron[hidden];
+        for (int i = 0; i < hidden; i++)
+        {
+            hiddenLayer[i] = new Neuron(weightIndexCounter++, MathHelper.RandomBias());
         }
 
         outputLayer = new Neuron[outputs];
-        for(int i = 0;i < outputs; i++)
+        for (int i = 0;i < outputs; i++)
         {
-            var outputNeuron = new Neuron(MathHelper.RandomBias());
-            for(int j =0; j< hidden; j++)
-            {
-                NeuronLink link = new NeuronLink(MathHelper.RandomWeight(), hiddenLayer[j], outputNeuron);
-                outputNeuron.links.Add(link);
-            }
-            outputLayer[i] = outputNeuron;
+            outputLayer[i] = new Neuron(weightIndexCounter++, MathHelper.RandomBias());
         }
     }
 
-    public double FeedForward(double[] inputs)
+    public double FeedForward(double[] data)
     {
-        //var res1 = hidden1.FeedForward(inputs);
-        //var res2 = hidden2.FeedForward(inputs);
+        if (data.Length != inputLayer.Length)
+            throw new Exception("Input size is not the same as the number of layers");
 
-        //var outpout = output1.FeedForward(new double[] { res1, res2 });
-        //return outpout;
+        //fill the input neurons with its corresponding data
+        for (int i = 0; i < data.Length; i++)
+        {
+            inputLayer[i].value = data[i];
+        }
+
+        for (int i = 0; i < data.Length; i++)
+        {
+            hiddenLayer[i].value = hiddenLayer[i].FeedForward(inputLayer);
+        }
         return 0.0;
-    }
-
-    public void Draw()
-    {
-        int inputCount = 0;
-        foreach(var inputNeuron in inputLayer)
-        {
-            int linkCount = 0;
-            Console.WriteLine("Input" + inputCount);
-            inputCount++;
-            foreach(var link in inputNeuron.links)
-            {
-                linkCount++;
-                Console.WriteLine("\tHidden" + linkCount);
-            }
-        }
     }
 }

@@ -18,7 +18,7 @@ internal class SVGDrawingHelper
     public string DrawNeuron(int x, int y, Neuron neuron)
     {
         return $"<circle cx=\"{x}\" cy=\"{y}\" r=\"{neuronRadius}\" stroke=\"blue\" stroke-width=\"5\" fill=\"green\" />" +
-            $"<text x=\"{x}\" y=\"{y}\" text-anchor=\"middle\" alignment-baseline=\"middle\" font-size=\"20\" fill=\"black\">{Math.Round(neuron.bias, 5)}</text>";
+            $"<text x=\"{x}\" y=\"{y}\" text-anchor=\"middle\" alignment-baseline=\"middle\" font-size=\"20\" fill=\"black\">{neuron.value}</text>"; //{Math.Round(neuron.bias, 5)}
     }
 
     public string DrawLayer(int layerIndex, int maxHeight, Neuron[] layer)
@@ -35,23 +35,11 @@ internal class SVGDrawingHelper
         return layerSVG.ToString();
     }
 
-    public string DrawLinks(Neuron[] layer)
-    {
-        for(int i = 0; i< layer.Length; i++)
-        {
-            for(int j = 0; j < layer[i].links.Count; j++)
-            {
-
-            }
-        }
-    }
-
     public int CalculateMaxHeight(NeuronalNetwork nn)
     {
         int max = Math.Max(Math.Max(nn.outputLayer.Length, nn.hiddenLayer.Length), nn.inputLayer.Length);
         return max * (neuronRadius * 2 + yDistPerNeuron) + shiftY;
     }
-
     public int CalculateMaxHeight(Neuron[] layer)
     {
         return layer.Length * (neuronRadius * 2 + yDistPerNeuron) + shiftY;
@@ -69,6 +57,6 @@ internal class SVGDrawingHelper
         svg.AppendLine(DrawLayer(2, height, network.outputLayer));
 
         svg.AppendLine("</svg>");
-        File.WriteAllText("P:\\nn.svg", svg.ToString());
+        File.WriteAllText("D:\\nn.svg", svg.ToString());
     }
 }

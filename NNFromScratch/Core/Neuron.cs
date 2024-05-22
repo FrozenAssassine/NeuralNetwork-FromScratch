@@ -1,13 +1,16 @@
-﻿namespace NNFromScratch.Core;
+﻿using NNFromScratch.Helper;
+
+namespace NNFromScratch.Core;
 internal class Neuron
 {
     public double bias;
-    public List<NeuronLink> links = new List<NeuronLink>();
+    public double value;
+    public int weightIndex;
 
-    public Neuron(NeuronLink link, double bias)
+    public Neuron(int weightIndex, double bias)
     {
         this.bias = bias;
-        this.links.Add(link);
+        this.weightIndex = weightIndex;
     }
 
     public Neuron(double bias)
@@ -15,8 +18,8 @@ internal class Neuron
         this.bias = bias;
     }
 
-    public double FeedForward(double[] inputs)
+    public double FeedForward(Neuron[] inputs)
     {
-        return 0; // return MathHelper.Sigmoid(MathHelper.DotProduct(inputs, weights) + bias);
+        return MathHelper.Sigmoid(MathHelper.DotProduct(inputs) + bias);
     }
 }

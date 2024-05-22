@@ -1,14 +1,16 @@
-﻿namespace NNFromScratch.Helper;
+﻿using NNFromScratch.Core;
+
+namespace NNFromScratch.Helper;
 
 internal class MathHelper
 {
     private static Random random = new Random();
-    public static double DotProduct(double[] inputs, double[] weights)
+    public static double DotProduct(Neuron[] inputs)
     {
         double res = 0;
         for (int i = 0; i < inputs.Length; i++)
         {
-            res += inputs[i] * weights[i];
+            res += inputs[i].value * WeightHelper.AllWeights[inputs[i].weightIndex];
         }
         return res;
     }
