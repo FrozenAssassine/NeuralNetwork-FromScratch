@@ -5,7 +5,7 @@ namespace NNFromScratch.Helper;
 internal class MathHelper
 {
     private static Random random = new Random();
-    public static double DotProduct(Neuron[] inputs)
+    /*public static double DotProduct(Neuron[] inputs)
     {
         double res = 0;
         for (int i = 0; i < inputs.Length; i++)
@@ -13,18 +13,23 @@ internal class MathHelper
             res += inputs[i].value * WeightHelper.AllWeights[inputs[i].weightIndex];
         }
         return res;
-    }
-    public static double Sigmoid(double x)
+    }*/
+    public static float Sigmoid(float x)
     {
-        return 1 / (1 + Math.Exp(-x));
+        return (float)(1 / (1 + Math.Exp(-x)));
     }
 
-    public static double MSE_Loss(double[] y_true, double[] y_pred)
+    public static float SigmoidDerivative(float x)
     {
-        double sum = 0;
+        return x * (1 - x);
+    }
+
+    public static float MSE_Loss(float[] y_true, float[] y_pred)
+    {
+        float sum = 0;
         for (int i = 0; i < y_true.Length; i++)
         {
-            double diff = y_true[i] - y_pred[i];
+            float diff = y_true[i] - y_pred[i];
             sum += diff * diff;
         }
 
@@ -32,13 +37,13 @@ internal class MathHelper
         return sum / y_true.Length;
     }
 
-    public static double RandomWeight()
+    public static float RandomWeight()
     {
-        return random.NextDouble();
+        return (float)random.NextDouble();
     }
 
-    public static double RandomBias()
+    public static float RandomBias()
     {
-        return random.NextDouble();
+        return (float)random.NextDouble();
     }
 }
