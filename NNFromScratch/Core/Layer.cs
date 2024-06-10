@@ -1,14 +1,15 @@
 ﻿using NNFromScratch.Helper;
+using NNFromScratch.Optimizer;
 using System.Drawing;
 
 namespace NNFromScratch.Core
 {
     internal class Layer
     {
-        public float[] Biases;
-        public float[] NeuronValues;
-        public float[] Errors;
-        public float[] Weights;
+        public LargeArray<float> Biases;
+        public LargeArray<float> NeuronValues;
+        public LargeArray<float> Errors;
+        public LargeArray<float> Weights;
         public readonly int Size;
         public Layer PreviousLayer;
         public string Name;
@@ -21,14 +22,14 @@ namespace NNFromScratch.Core
 
         public void Initialize(Layer previousLayer)
         {
-            this.Biases = new float[this.Size];
-            this.NeuronValues = new float[this.Size];
-            this.Errors = new float[this.Size];
+            this.Biases = new LargeArray<float>(this.Size);
+            this.NeuronValues = new LargeArray<float>(this.Size);
+            this.Errors = new LargeArray<float>(this.Size);
             this.PreviousLayer = previousLayer;
 
             //store the weights between the current and previous layer or null if the current layer is the input layer
             if (previousLayer != null)
-                this.Weights = new float[previousLayer.Size * this.Size];
+                this.Weights = new LargeArray<float>(previousLayer.Size * this.Size);
 
             FillRandom();
 
@@ -60,10 +61,14 @@ namespace NNFromScratch.Core
                 bw.Write((double)Biases[i]);
             }
 
-            bw.Write(Weights.Length);
-            
+            bw.Write(this.Size);
+
             for (int i = 0; i < Weights.Length; i++)
             {
+                if(i % this.Size == 0)
+                {
+                    bw.Write(PreviousLayer.Size);
+                }
                 bw.Write((double)Weights[i]);
             }
         }

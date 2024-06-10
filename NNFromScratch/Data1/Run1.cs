@@ -2,7 +2,7 @@
 
 public class Run1
 {
-    public static void main(String[] args)
+    public static void Main()
     {
         string imagePath = "D:\\testnn\\t10k-images.idx3-ubyte";
         string labelPath = "D:\\testnn\\t10k-labels.idx1-ubyte";
@@ -13,9 +13,9 @@ public class Run1
 
         DigitRecognition recognizer = new DigitRecognition(data[0].Width, data[0].Height);
 
-        //recognizer.Train(data, 1, 0.1f);
+        recognizer.Train(data, 1, 0.1f);
 
-        recognizer.Load("D:\\testnn\\odr.cool");
+        //recognizer.Load("D:\\testnn\\odr.cool");
 
         for (int i = 0; i < digits.Length; i++)
         {
@@ -32,7 +32,7 @@ public class Run1
                 correct++;
         }
 
-        //recognizer.Save("D:\\testnn\\odr.cool");
+        recognizer.Save("D:\\testnn\\odr1.cool");
         
         Console.WriteLine("Correct: " + correct + "/" + data.Length);
     }

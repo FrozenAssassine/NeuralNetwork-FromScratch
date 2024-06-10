@@ -1,7 +1,11 @@
 ﻿using NNFromScratch.Core;
+using NNFromScratch.Optimizer;
 
-Run1.main(null);
+LargeArray<float>.chunkSize = SIMDAccelerator.SIMDLength;
 
+Run1.Main();
+
+/*
 //var res = MathHelper.MSE_Loss(new double[] { 1, 0, 0, 1 }, new double[] { 0, 0, 0, 0 });
 
 //Console.WriteLine(res);
@@ -34,8 +38,7 @@ test(new float[] { 1, 0 });
 test(new float[] { 0, 1 });
 test(new float[] { 1, 1 });
 
-Console.WriteLine("");
-
+Console.WriteLine("");*/
 //SVGDrawingHelper svg = new SVGDrawingHelper();
 //svg.Draw(nn);
 /*

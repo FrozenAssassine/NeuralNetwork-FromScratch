@@ -1,5 +1,6 @@
 ﻿using NNFromScratch;
 using NNFromScratch.Core;
+using NNFromScratch.Optimizer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -28,7 +29,6 @@ namespace Test1.Data1
         {
             for (int j = 0; j < epochs; j++)
             {
-
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 {
@@ -40,7 +40,7 @@ namespace Test1.Data1
                             sw.Stop();
                             sw.Restart();
                         }
-                        nn.Train2(Prepare(data[i].Data), GetDigitArrayFromDigit(data[i].Digit), 2, learningRate);
+                        nn.Train(Prepare(data[i].Data), GetDigitArrayFromDigit(data[i].Digit), 2, learningRate);
                     }
                 }
             }
@@ -77,7 +77,7 @@ namespace Test1.Data1
             return res;
         }
 
-        private int GetDigitFromDigitArray(float[] d)
+        private int GetDigitFromDigitArray(LargeArray<float> d)
         {
             int maxIndex = 0;
             float max = d[0];

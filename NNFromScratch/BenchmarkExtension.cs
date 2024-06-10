@@ -22,6 +22,15 @@ namespace NNFromScratch
             return $"{sw.ElapsedMilliseconds}ms ({sw.ElapsedTicks}ticks)" + (memoryUsage / 1000) + "KB";
         }
 
+        public static void BenchmarkOutput(Action action, string name)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            action?.Invoke();
+            sw.Stop();
+            Console.WriteLine($"{name} {sw.ElapsedMilliseconds}ms ({sw.ElapsedTicks}ticks)");
+        }
+
         public static string Benchmark(Action action)
         {
             Stopwatch sw = new Stopwatch();
