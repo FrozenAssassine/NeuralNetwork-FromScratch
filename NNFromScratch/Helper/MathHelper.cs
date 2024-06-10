@@ -4,16 +4,17 @@ namespace NNFromScratch.Helper;
 
 internal class MathHelper
 {
-    private static Random random = new Random();
     /*public static double DotProduct(Neuron[] inputs)
+{
+    double res = 0;
+    for (int i = 0; i < inputs.Length; i++)
     {
-        double res = 0;
-        for (int i = 0; i < inputs.Length; i++)
-        {
-            res += inputs[i].value * WeightHelper.AllWeights[inputs[i].weightIndex];
-        }
-        return res;
-    }*/
+        res += inputs[i].value * WeightHelper.AllWeights[inputs[i].weightIndex];
+    }
+    return res;
+}*/
+    private static Random random = new Random();
+
     public static float Sigmoid(float x)
     {
         return (float)(1 / (1 + Math.Exp(-x)));
@@ -23,7 +24,15 @@ internal class MathHelper
     {
         return x * (1 - x);
     }
+    public static float RandomWeight()
+    {
+        return (float)random.NextDouble();
+    }
 
+    public static float RandomBias()
+    {
+        return (float)random.NextDouble();
+    }
     public static float MSE_Loss(float[] y_true, float[] y_pred)
     {
         float sum = 0;
@@ -37,13 +46,4 @@ internal class MathHelper
         return sum / y_true.Length;
     }
 
-    public static float RandomWeight()
-    {
-        return (float)random.NextDouble();
-    }
-
-    public static float RandomBias()
-    {
-        return (float)random.NextDouble();
-    }
 }
