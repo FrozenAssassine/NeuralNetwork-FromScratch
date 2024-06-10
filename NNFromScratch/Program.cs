@@ -1,5 +1,7 @@
 ﻿using NNFromScratch.Core;
 
+Run1.main(null);
+
 //var res = MathHelper.MSE_Loss(new double[] { 1, 0, 0, 1 }, new double[] { 0, 0, 0, 0 });
 
 //Console.WriteLine(res);
