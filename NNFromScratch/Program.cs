@@ -5,15 +5,20 @@ using NNFromScratch.Helper;
 
 //Console.WriteLine(res);
 
-Layer input = new Layer(4, "Input");
-Layer hidden1 = new Layer(2, "Hidden1");
+Layer input = new Layer(2, "Input");
+Layer hidden1 = new Layer(4, "Hidden1");
 Layer output = new Layer(1, "Output");
 
 NeuralNetwork nn = new NeuralNetwork(input, new Layer[] {hidden1 }, output);
 
-nn.Train(new float[] { 00, 01, 10, 11 }, new float[] { 1,0,0,1 }, 10_000, 0.1f);
+for (int i = 0; i < 2000; i++)
+{
+    nn.Train(new float[] { 1, 0 }, new float[] { 1 }, 5, 0.01f);
+    nn.Train(new float[] { 0, 1 }, new float[] { 0 }, 5, 0.01f);
+}
 
 var res = nn.FeedForward(new float[] { 1, 0 });
+
 foreach(var pred in res)
 {
     Console.WriteLine(pred);
