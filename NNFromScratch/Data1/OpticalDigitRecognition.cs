@@ -1,10 +1,8 @@
-﻿using NNFromScratch.Core;
+﻿using NNFromScratch;
+using NNFromScratch.Core;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Test1.Data1
 {
@@ -30,12 +28,19 @@ namespace Test1.Data1
         {
             for (int j = 0; j < epochs; j++)
             {
-                for (int i = 0; i < data.Length; i++)
+
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 {
-                    nn.Train2(Prepare(data[i].Data), GetDigitArrayFromDigit(data[i].Digit), 2, learningRate);
-                    if (i % 1000 == 0)
+                    for (int i = 0; i < data.Length; i++)
                     {
-                        Console.WriteLine(j + "/" + epochs+ ", " + i + "/" + data.Length);
+                        if (i % 1000 == 0)
+                        {
+                            Console.WriteLine(j + "/" + epochs + ", " + i + "/" + data.Length + ": " + $"{sw.ElapsedMilliseconds}ms ({sw.ElapsedTicks}ticks)");
+                            sw.Stop();
+                            sw.Restart();
+                        }
+                        nn.Train2(Prepare(data[i].Data), GetDigitArrayFromDigit(data[i].Digit), 2, learningRate);
                     }
                 }
             }
@@ -85,6 +90,20 @@ namespace Test1.Data1
                 }
             }
             return maxIndex;
+        }
+
+        public void Save(string path)
+        {
+            var ms = new MemoryStream();
+            nn.Save(ms);
+            File.WriteAllBytes(path, ms.ToArray());
+        }
+
+        public void Load(string path)
+        {
+            var bytes = File.ReadAllBytes(path);
+            var ms = new MemoryStream(bytes);
+            nn.Load(ms);
         }
     }
 }

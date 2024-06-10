@@ -17,7 +17,7 @@ internal class MathHelper
 
     public static float Sigmoid(float x)
     {
-        return (float)(1 / (1 + Math.Exp(-x)));
+        return (1 / (1 + MathF.Exp(-x)));
     }
 
     public static float SigmoidDerivative(float x)

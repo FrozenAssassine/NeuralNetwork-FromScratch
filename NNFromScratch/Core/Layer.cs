@@ -8,7 +8,7 @@ namespace NNFromScratch.Core
         public float[] Biases;
         public float[] NeuronValues;
         public float[] Errors;
-        public float[] Weight;
+        public float[] Weights;
         public readonly int Size;
         public Layer PreviousLayer;
         public string Name;
@@ -28,12 +28,12 @@ namespace NNFromScratch.Core
 
             //store the weights between the current and previous layer or null if the current layer is the input layer
             if (previousLayer != null)
-                this.Weight = new float[previousLayer.Size * this.Size];
+                this.Weights = new float[previousLayer.Size * this.Size];
 
             FillRandom();
 
             if (previousLayer != null)
-                Console.WriteLine("\tConnected with " + previousLayer.Name + " with " + Weight.Length + " Weights");
+                Console.WriteLine("\tConnected with " + previousLayer.Name + " with " + Weights.Length + " Weights");
 
             Console.WriteLine("Initialize layer " + Name + " with " + Size + " Neurons");
         }
@@ -44,8 +44,45 @@ namespace NNFromScratch.Core
             for (int i = 0; i<Size; i++)
             {
                 Biases[i] = MathHelper.RandomBias();
-                if(Weight != null)
-                    Weight[i] = MathHelper.RandomWeight();
+                if(Weights != null)
+                    Weights[i] = MathHelper.RandomWeight();
+            }
+        }
+
+        public virtual void Save(BinaryWriter bw)
+        {
+            if (Weights == null)
+                return;
+
+            bw.Write(Biases.Length);
+            for (int i = 0; i < Biases.Length; i++)
+            {
+                bw.Write((double)Biases[i]);
+            }
+
+            bw.Write(Weights.Length);
+            
+            for (int i = 0; i < Weights.Length; i++)
+            {
+                bw.Write((double)Weights[i]);
+            }
+        }
+
+        public virtual void Load(BinaryReader br)
+        {
+            int length = br.ReadInt32();
+            if (length != Biases.Length)
+                throw new InvalidOperationException("Weight data isn't made for this network!");
+            for (int i = 0; i < length; i++)
+            {
+                Biases[i] = (float)br.ReadDouble();
+            }
+            length = br.ReadInt32();
+            if (length != Weights.Length)
+                throw new InvalidOperationException("Weight data isn't made for this network!");
+            for (int i = 0; i < length; i++)
+            {
+                Weights[i] = (float)br.ReadDouble();
             }
         }
     }

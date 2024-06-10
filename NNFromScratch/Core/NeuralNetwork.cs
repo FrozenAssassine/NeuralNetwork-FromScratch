@@ -56,7 +56,7 @@ internal class NeuralNetwork
                 for (int j = 0; j < outputLayer.PreviousLayer.NeuronValues.Length; j++)
                 {
                     int weightIndex = outputLayer.PreviousLayer.NeuronValues.Length * i + j;
-                    outputLayer.Weight[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
+                    outputLayer.Weights[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
                 }
 
                 // Update biases for the output layer
@@ -70,7 +70,7 @@ internal class NeuralNetwork
                 for (int j = 0; j < outputLayer.NeuronValues.Length; j++)
                 {
                     int weightIndex = outputLayer.PreviousLayer.NeuronValues.Length * j + i;
-                    error += outputLayer.Errors[j] * outputLayer.Weight[weightIndex];
+                    error += outputLayer.Errors[j] * outputLayer.Weights[weightIndex];
                 }
                 outputLayer.PreviousLayer.Errors[i] = error * MathHelper.SigmoidDerivative(outputLayer.PreviousLayer.NeuronValues[i]);
             }
@@ -81,7 +81,7 @@ internal class NeuralNetwork
                 for (int j = 0; j < inputs.Length; j++)
                 {
                     int weightIndex = inputs.Length * i + j;
-                    outputLayer.PreviousLayer.Weight[weightIndex] += learningRate * outputLayer.PreviousLayer.Errors[i] * inputs[j];
+                    outputLayer.PreviousLayer.Weights[weightIndex] += learningRate * outputLayer.PreviousLayer.Errors[i] * inputs[j];
                 }
 
                 // Update biases for the hidden layer
@@ -98,25 +98,27 @@ internal class NeuralNetwork
             float[] res = FeedForward(inputs);
 
             // Calculate errors for the output layer
-            for (int i = 0; i < outputLayer.NeuronValues.Length; i++)
+            Parallel.For(0, outputLayer.NeuronValues.Length, (i) =>
             {
                 outputLayer.Errors[i] = desiredOutputs[i] - res[i];
-            }
+            });
 
             // Update weights and biases for the output layer
-            for (int i = 0; i < outputLayer.Size; i++)
+            Parallel.For(0, outputLayer.Size, (i) =>
             {
                 for (int j = 0; j < outputLayer.PreviousLayer.Size; j++)
                 {
                     int weightIndex = i * outputLayer.PreviousLayer.Size + j;
-                    outputLayer.Weight[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
+                    outputLayer.Weights[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
                 }
                 outputLayer.Biases[i] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]);
-            }
+            });
 
             // Backpropagate the errors to the hidden layers
-            for (int h = hiddenLayers.Length - 1; h >= 0; h--)
+            Parallel.For(0, hiddenLayers.Length, index =>
             {
+                int h = hiddenLayers.Length - 1 - index;
+
                 Layer currentLayer = hiddenLayers[h];
                 Layer nextLayer = (h == hiddenLayers.Length - 1) ? outputLayer : hiddenLayers[h + 1];
 
@@ -126,15 +128,17 @@ internal class NeuralNetwork
                     for (int j = 0; j < nextLayer.Size; j++)
                     {
                         int weightIndex = j * currentLayer.Size + i;
-                        error += nextLayer.Errors[j] * nextLayer.Weight[weightIndex];
+                        error += nextLayer.Errors[j] * nextLayer.Weights[weightIndex];
                     }
                     currentLayer.Errors[i] = error * MathHelper.SigmoidDerivative(currentLayer.NeuronValues[i]);
                 }
-            }
+            });
 
             // Update weights and biases for hidden layers
-            for (int h = hiddenLayers.Length - 1; h >= 0; h--)
+            Parallel.For(0, hiddenLayers.Length, index =>
             {
+                int h = hiddenLayers.Length - 1 - index;
+
                 Layer currentLayer = hiddenLayers[h];
                 Layer previousLayer = (h == 0) ? inputLayer : hiddenLayers[h - 1];
 
@@ -143,11 +147,11 @@ internal class NeuralNetwork
                     for (int j = 0; j < previousLayer.Size; j++)
                     {
                         int weightIndex = i * previousLayer.Size + j;
-                        currentLayer.Weight[weightIndex] += learningRate * currentLayer.Errors[i] * previousLayer.NeuronValues[j];
+                        currentLayer.Weights[weightIndex] += learningRate * currentLayer.Errors[i] * previousLayer.NeuronValues[j];
                     }
                     currentLayer.Biases[i] += learningRate * currentLayer.Errors[i];
                 }
-            }
+            });
         }
     }
 
@@ -157,38 +161,73 @@ internal class NeuralNetwork
             throw new Exception("Input size is not the same as the number of layers");
 
         //fill the input neurons with its corresponding data
-        for (int i = 0; i < data.Length; i++)
-        {
+        Parallel.For(0, data.Length, (i) => {
             inputLayer.NeuronValues[i] = data[i];
-        }
+        });
+
 
         foreach (var hidden in hiddenLayers)
         {
-            for (int i = 0; i < hidden.Size; i++)
+            Parallel.For(0, hidden.Size, (i) =>
             {
                 float sum = 0.0f;
                 for (int j = 0; j < hidden.PreviousLayer.Size; j++)
                 {
                     int weightIndex = i * hidden.PreviousLayer.Size + j;
-                    sum += hidden.PreviousLayer.NeuronValues[j] * hidden.Weight[weightIndex];
+                    sum += hidden.PreviousLayer.NeuronValues[j] * hidden.Weights[weightIndex];
                 }
                 sum += hidden.Biases[i];
                 hidden.NeuronValues[i] = MathHelper.Sigmoid(sum);
-            }
+            });
         }
 
         // Compute neuron values for output layer
-        for (int i = 0; i < outputLayer.Size; i++)
+        Parallel.For(0, outputLayer.Size, (i) =>
         {
             float sum = 0.0f;
             for (int j = 0; j < outputLayer.PreviousLayer.Size; j++)
             {
                 int weightIndex = i * outputLayer.PreviousLayer.Size + j;
-                sum += outputLayer.PreviousLayer.NeuronValues[j] * outputLayer.Weight[weightIndex];
+                sum += outputLayer.PreviousLayer.NeuronValues[j] * outputLayer.Weights[weightIndex];
             }
             sum += outputLayer.Biases[i];
             outputLayer.NeuronValues[i] = MathHelper.Sigmoid(sum);
-        }
+        });
         return outputLayer.NeuronValues;
+    }
+
+    public void SaveWeights()
+    {
+
+    }
+
+    public void Save(Stream stream)
+    {
+        //todo:
+        var layer = new List<Layer>();
+        layer.AddRange(hiddenLayers);
+        layer.Add(outputLayer);
+
+        BinaryWriter bw = new BinaryWriter(stream);
+        foreach(var l in layer)
+        {
+            l.Save(bw);
+        }
+        bw.Dispose();
+    }
+
+    public void Load(Stream stream)
+    {
+        //todo:
+        var layer = new List<Layer>();
+        layer.AddRange(hiddenLayers);
+        layer.Add(outputLayer);
+
+        BinaryReader br = new BinaryReader(stream);
+        foreach (var l in layer)
+        {
+            l.Load(br);
+        }
+        br.Dispose();
     }
 }

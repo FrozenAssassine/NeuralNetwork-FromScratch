@@ -11,10 +11,11 @@ public class Run1
 
         int[] digits = new int[data.Length];
 
-
         DigitRecognition recognizer = new DigitRecognition(data[0].Width, data[0].Height);
 
-        recognizer.Train(data, 20, 0.1f);
+        //recognizer.Train(data, 1, 0.1f);
+
+        recognizer.Load("D:\\testnn\\odr.cool");
 
         for (int i = 0; i < digits.Length; i++)
         {
@@ -31,6 +32,10 @@ public class Run1
                 correct++;
         }
 
+        //recognizer.Save("D:\\testnn\\odr.cool");
+        
         Console.WriteLine("Correct: " + correct + "/" + data.Length);
     }
 }
+
+//Correct: 8388/10000
