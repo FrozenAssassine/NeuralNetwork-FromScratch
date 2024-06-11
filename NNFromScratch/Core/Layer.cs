@@ -1,7 +1,7 @@
 ﻿using NNFromScratch.Helper;
 
 namespace NNFromScratch.Core;
-internal class Layer
+public class Layer
 {
     public float[] Biases;
     public float[] NeuronValues;

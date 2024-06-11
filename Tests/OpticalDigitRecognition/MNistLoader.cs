@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Test1.Data1;
+﻿namespace Tests.TestODR;
 
 public static class MNistLoader
 {
-    public static DigitData[] LoadFromFile(string imageFile, string labelFile)
+    public static (float[][] x, float[][] y, int imageWidth, int imageHeight) LoadFromFile(string imageFile, string labelFile)
     {
         MemoryStream imageData = new MemoryStream(File.ReadAllBytes(imageFile));
         MemoryStream labelData = new MemoryStream(File.ReadAllBytes(labelFile));
@@ -19,26 +13,40 @@ public static class MNistLoader
         int imageItemCount = imageReader.ReadInt32MSB();
         int labelItemCount = labelReader.ReadInt32MSB();
         if (imageItemCount != labelItemCount)
-            throw new Exception("Files doesn't have the same amount of data!");
+            throw new Exception("Files do not have the same amount of data!");
+
         int imageWidth = imageReader.ReadInt32MSB();
         int imageHeight = imageReader.ReadInt32MSB();
-        DigitData[] digits = new DigitData[imageItemCount];
+
+        float[][] x = new float[imageItemCount][];
+        float[][] y = new float[imageItemCount][];
+
         for (int i = 0; i < imageItemCount; i++)
         {
             byte[] buffer = new byte[imageWidth * imageHeight];
             imageReader.Read(buffer, 0, buffer.Length);
             int digit = labelReader.ReadByte();
-            digits[i] = new DigitData()
-            {
-                Data = buffer,
-                Digit = digit,
-                Width = imageWidth,
-                Height = imageHeight
-            };
-        }
-        return digits;
-    }
 
+            //image pixel data:
+            var item = x[i] = new float[buffer.Length];
+            for (int j = 0; j < buffer.Length; j++)
+            {
+                item[j] = buffer[j] / 255.0f;
+            }
+
+            //desired image data
+            float[] res = new float[10];
+            for (int j = 0; j < res.Length; j++)
+            {
+                if (j == digit)
+                    res[j] = 1;
+                else
+                    res[j] = 0;
+            }
+            y[i] = res;
+        }
+        return (x, y, imageWidth, imageHeight);
+    }
     private static int ReadInt32MSB(this BinaryReader br)
     {
         byte[] bytes = br.ReadBytes(4);

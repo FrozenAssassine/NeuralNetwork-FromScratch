@@ -1,6 +1,6 @@
 ﻿namespace NNFromScratch.Helper;
 
-internal class MathHelper
+public class MathHelper
 {
     private static Random random = new Random();
     public static float Sigmoid(float x)

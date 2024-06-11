@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace NNFromScratch
 {
-    internal class BenchmarkExtension
+    public class BenchmarkExtension
     {
         public static string BenchmarkWithRam(Action action)
         {

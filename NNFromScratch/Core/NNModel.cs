@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-internal class NNModel
+public class NNModel
 {
     private NeuralNetwork nn;
 
@@ -39,28 +39,32 @@ internal class NNModel
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
 
-        if (desired[0].Length != nn.outputLayer.Size)
-            throw new Exception("Desired size does not match output layer count");
-
-        float printCount = inputs[0].Length / 1000 < 1 ? 1 : 1000; 
-
-        for(int e = 0; e<epochs; e++)
+        var trainingTime = BenchmarkExtension.Benchmark(() =>
         {
-            Stopwatch trainingTimeSW = new Stopwatch();
-            trainingTimeSW.Start();
+            Stopwatch epochTime = new Stopwatch();
+            for (int e = 0; e < epochs; e++)
             {
-                for (int i = 0; i < inputs.Length; i++)
+                float averageStepTime = 0;
+                epochTime.Restart();
+                Stopwatch trainingTimeSW = new Stopwatch();
+                trainingTimeSW.Start();
                 {
-                    if (i % printCount == 0)
+                    for (int i = 0; i < inputs.Length; i++)
                     {
-                        Console.WriteLine($"Epoch {e}/{epochs}; {i}/{inputs.Length}; ({trainingTimeSW.ElapsedMilliseconds}ms, {trainingTimeSW.ElapsedTicks}ticks)");
-                        trainingTimeSW.Stop();
-                        trainingTimeSW.Restart();
+                        if (i % 1000 == 0)
+                        {
+                            averageStepTime += trainingTimeSW.ElapsedMilliseconds;
+                            Console.WriteLine($"Epoch {e}/{epochs}; {i}/{inputs.Length}; ({trainingTimeSW.ElapsedMilliseconds}ms, {trainingTimeSW.ElapsedTicks}ticks)");
+                            trainingTimeSW.Stop();
+                            trainingTimeSW.Restart();
+                        }
+                        nn.Train(inputs[0], desired[0], 1, learningRate);
                     }
-                    nn.Train(inputs[i], desired[i], 1, learningRate);
                 }
+                Console.WriteLine($"Epoch {e} took {epochTime.ElapsedMilliseconds}ms; avg({(int)averageStepTime / (inputs.Length / 1000)}ms/step");
             }
-        }
+        });
+        Console.WriteLine($"Training took: {trainingTime }");
     }
 
     public void Save(string path)
@@ -77,6 +81,23 @@ internal class NNModel
         nn.Load(ms);
     }
 
+    public (float percent, int count, int correct) Evaluate(float[][] x, float[][] y, bool output = true)
+    {
+        int correct = 0;
+        for (int i = 0; i < x.Length; i++)
+        {
+            if(y[i][0] == MathHelper.GetMaximumIndex(nn.FeedForward(x[i])))
+                correct++;
+        }
+
+        float percent = x.Length / correct;
+
+        if(output)
+            Console.WriteLine($"Evaluation: {x.Length}/{correct} ({percent})");
+
+        return (percent, x.Length, correct);
+    }
+    
     public void Summary()
     {
 
