@@ -1,11 +1,12 @@
 ﻿using Tests.XOR;
 using Tests.TestODR;
-
+using Tests.MCSkinCreator;
 public class Program
 {
     public static void Main(string[] args)
     {
-        Test_ODR.Run();
+        MinecraftSkinCreator.Run();
+        //Test_ODR.Run();
         //Test_XOR.Run();
     }
 }

@@ -40,6 +40,8 @@ public class NNModel
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
 
+        int loggingInterval = 10;
+
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];
 
@@ -55,10 +57,10 @@ public class NNModel
                 {
                     for (int i = 0; i < inputs.Length; i++)
                     {
-                        if (i % 1000 == 0)
+                        if (i % loggingInterval == 0)
                         {
                             averageStepTime += trainingTimeSW.ElapsedMilliseconds;
-                            Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1000}/{inputs.Length}; ({trainingTimeSW.ElapsedMilliseconds}ms, {trainingTimeSW.ElapsedTicks}ticks)");
+                            Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + loggingInterval}/{inputs.Length}; ({trainingTimeSW.ElapsedMilliseconds}ms, {trainingTimeSW.ElapsedTicks}ticks)");
                             trainingTimeSW.Stop();
                             trainingTimeSW.Restart();
                         }
@@ -66,7 +68,7 @@ public class NNModel
                     }
                 }
                 Console.WriteLine(new string('-', 50));
-                Console.WriteLine($"Epoch {e} took {epochTime.ElapsedMilliseconds}ms; avg({(int)averageStepTime / (inputs.Length / 1000)}ms/step");
+                Console.WriteLine($"Epoch {e} took {epochTime.ElapsedMilliseconds}ms; avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step");
 
                 //evaluate
                 int percent = inputs.Length / 100 * evaluatePercent;
