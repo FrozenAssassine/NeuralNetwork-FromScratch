@@ -18,7 +18,6 @@ namespace NNFromScratch.Core
             this.Size = size;
             this.Name = name;
         }
-
         public void Initialize(Layer previousLayer)
         {
             this.Biases = new float[this.Size];

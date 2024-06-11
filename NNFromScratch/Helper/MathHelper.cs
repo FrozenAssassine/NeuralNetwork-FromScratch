@@ -1,18 +1,7 @@
-﻿using NNFromScratch.Core;
-
-namespace NNFromScratch.Helper;
+﻿namespace NNFromScratch.Helper;
 
 internal class MathHelper
 {
-    /*public static double DotProduct(Neuron[] inputs)
-{
-    double res = 0;
-    for (int i = 0; i < inputs.Length; i++)
-    {
-        res += inputs[i].value * WeightHelper.AllWeights[inputs[i].weightIndex];
-    }
-    return res;
-}*/
     private static Random random = new Random();
 
     public static float Sigmoid(float x)
@@ -33,17 +22,4 @@ internal class MathHelper
     {
         return (float)random.NextDouble();
     }
-    public static float MSE_Loss(float[] y_true, float[] y_pred)
-    {
-        float sum = 0;
-        for (int i = 0; i < y_true.Length; i++)
-        {
-            float diff = y_true[i] - y_pred[i];
-            sum += diff * diff;
-        }
-
-        //average:
-        return sum / y_true.Length;
-    }
-
 }

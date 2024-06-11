@@ -12,23 +12,18 @@ namespace Test1.Data1
 
         public DigitRecognition(int imageWidth, int imageHeight)
         {
-            //NeuralNetwork.ChunkSize = SIMDAccelerator.SIMDLength;
-
             Layer input = new Layer(imageWidth * imageHeight, "Input");
             Layer hidden1 = new Layer(128, "Hidden1");
             Layer hidden2 = new Layer(64, "Hidden2");
             Layer output = new Layer(10, "Output");
 
             nn = new NeuralNetwork(input, new Layer[] { hidden1, hidden2 }, output);
-            //network = new NeuralNetwork(imageWidth * imageHeight, 2, 10, 20);
-            //network.Accelerator = new SIMDAccelerator();
         }
 
         public void Train(DigitData[] data, int epochs, float learningRate = 0.01f)
         {
             for (int j = 0; j < epochs; j++)
             {
-
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 {
@@ -36,11 +31,11 @@ namespace Test1.Data1
                     {
                         if (i % 1000 == 0)
                         {
-                            Console.WriteLine(j + "/" + epochs + ", " + i + "/" + data.Length + ": " + $"{sw.ElapsedMilliseconds}ms ({sw.ElapsedTicks}ticks)");
+                            Console.WriteLine($"Epoch {j}/{epochs}; {i}/{data.Length}; ({sw.ElapsedMilliseconds}ms, {sw.ElapsedTicks}ticks)");
                             sw.Stop();
                             sw.Restart();
                         }
-                        nn.Train2(Prepare(data[i].Data), GetDigitArrayFromDigit(data[i].Digit), 2, learningRate);
+                        nn.Train(Prepare(data[i].Data), GetDigitArrayFromDigit(data[i].Digit), 2, learningRate);
                     }
                 }
             }
