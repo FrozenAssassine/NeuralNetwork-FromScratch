@@ -3,7 +3,6 @@
 internal class MathHelper
 {
     private static Random random = new Random();
-
     public static float Sigmoid(float x)
     {
         return (1 / (1 + MathF.Exp(-x)));
@@ -21,5 +20,10 @@ internal class MathHelper
     public static float RandomBias()
     {
         return (float)random.NextDouble();
+    }
+
+    public static int GetMaximumIndex(float[] items)
+    {
+        return Array.IndexOf(items, items.Max());
     }
 }

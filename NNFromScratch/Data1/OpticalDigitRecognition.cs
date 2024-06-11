@@ -1,8 +1,9 @@
-﻿using NNFromScratch;
-using NNFromScratch.Core;
-using System;
-using System.Collections.Generic;
+﻿using NNFromScratch.Core;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp;
 using System.Diagnostics;
+using NNFromScratch.Helper;
+using NNFromScratch;
 
 namespace Test1.Data1
 {
@@ -35,7 +36,7 @@ namespace Test1.Data1
                             sw.Stop();
                             sw.Restart();
                         }
-                        nn.Train(Prepare(data[i].Data), GetDigitArrayFromDigit(data[i].Digit), 2, learningRate);
+                        nn.Train(Prepare(data[i].Data), GetDigitArrayFromDigit(data[i].Digit), 1, learningRate);
                     }
                 }
             }
@@ -47,6 +48,34 @@ namespace Test1.Data1
             {
                 data[i].Digit = GetDigitFromDigitArray(nn.FeedForward(Prepare(data[i].Data)));
             }
+        }
+
+        public void Classify(string path, bool showPredictions = false)
+        {
+            int maxIndex = 0;
+            float[] prediction = null;
+            var time = BenchmarkExtension.Benchmark(() =>
+            {
+                var image = GetImagePixel(path);
+                prediction = nn.FeedForward(image);
+                maxIndex = MathHelper.GetMaximumIndex(prediction);
+            });
+
+            if (prediction == null)
+                return;
+
+            if (showPredictions)
+            {
+                Console.WriteLine("Predictions:");
+                for (int i = 0; i < prediction.Length; i++)
+                {
+                    var pred = prediction[i];
+                    Console.WriteLine($"\t {i}: {MathF.Round(pred, 4)}");
+                }
+            }
+
+
+            Console.WriteLine($"Provided image is {maxIndex} with probability {prediction[maxIndex]}; Took {time}");
         }
 
         private float[] Prepare(byte[] bytes)
@@ -99,6 +128,30 @@ namespace Test1.Data1
             var bytes = File.ReadAllBytes(path);
             var ms = new MemoryStream(bytes);
             nn.Load(ms);
+        }
+
+        //returns 0 for all colors and 1 for all black colors with alpha of exactly 255
+        public float[] GetImagePixel(string path)
+        {
+            float[] pixels = new float[28 * 28];
+            int index = 0;
+            using Image<Rgba32> image = Image.Load<Rgba32>(path);
+            image.ProcessPixelRows(accessor =>
+            {
+                Rgba32 transparent = Color.Transparent;
+
+                for (int y = 0; y < accessor.Height; y++)
+                {
+                    Span<Rgba32> pixelRow = accessor.GetRowSpan(y);
+
+                    for (int x = 0; x < pixelRow.Length; x++)
+                    {
+                        ref Rgba32 pixel = ref pixelRow[x];
+                        pixels[index++] = (pixel.R == 0 && pixel.G == 0 && pixel.B == 0 && pixel.A == 255) ? 1 : 0;
+                    }
+                }
+            });
+            return pixels;
         }
     }
 }
