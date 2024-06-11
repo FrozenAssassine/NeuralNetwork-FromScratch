@@ -26,6 +26,7 @@ internal class NeuralNetwork
         outputLayer.Initialize(hidden[hidden.Length > 1 ? hidden.Length - 1 : 0]);
     }
 
+
     public void Train(float[] inputs, float[] desiredOutputs, int epochs, float learningRate)
     {
         for (int e = 0; e < epochs; e++)

@@ -1,10 +1,29 @@
 ﻿using NNFromScratch;
+using NNFromScratch.Core;
 using Test1.Data1;
 
 public class Program
 {
     public static void Main()
     {
+        NNModel nnmodel = new NNModel(new Layer[]
+        {
+            new Layer(2),
+            new Layer(4),
+            new Layer(1),
+        });
+
+        float[][] inputs = new float[][] { new float[] { 0, 0 }, new float[] { 0, 1 }, new float[] { 1, 0 }, new float[] { 1, 1 } };
+        float[][] desired = new float[][] { new float[] { 0 }, new float[] { 1 }, new float[] { 1 }, new float[] { 0 } };
+        nnmodel.Train(inputs, desired, 16000, 0.01f);
+
+        var predict = nnmodel.Predict(new float[] { 0, 0 });
+        foreach(var pred in predict)
+        {
+            Console.WriteLine(pred);
+        }
+
+        return;
         bool train = false;
         string imagePath = ".\\datasets\\t10k-images.idx3-ubyte";
         string labelPath = ".\\datasets\\t10k-labels.idx1-ubyte";

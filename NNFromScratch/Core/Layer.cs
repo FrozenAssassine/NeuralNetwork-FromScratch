@@ -9,13 +9,15 @@ internal class Layer
     public float[] Weights;
     public readonly int Size;
     public Layer PreviousLayer;
+    public Layer NextLayer;
     public string Name;
 
-    public Layer(int size, string name)
+    public Layer(int size, string name = "")
     {
         this.Size = size;
         this.Name = name;
     }
+
     public void Initialize(Layer previousLayer)
     {
         this.Biases = new float[this.Size];
