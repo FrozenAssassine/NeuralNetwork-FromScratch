@@ -14,6 +14,12 @@ internal class MathHelper
         }
         return res;
     }*/
+
+    //public static float DotProduct(float[] item1, float[] item2)
+    //{
+    //    float res = 0;
+    //    for(int i = 0; i<)
+    //}
     public static float Sigmoid(float x)
     {
         return (float)(1 / (1 + Math.Exp(-x)));

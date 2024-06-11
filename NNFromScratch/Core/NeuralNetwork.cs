@@ -28,15 +28,15 @@ internal class NeuralNetwork
         this.outputLayer = outputs;
 
         //initialize the layers 
-        inputLayer.Initialize(null);
+        inputLayer.Initialize(null, hidden[0]);
         for(int i = 0; i<hidden.Length; i++)
         {
             if (i == 0)
-                hidden[i].Initialize(inputLayer);
+                hidden[i].Initialize(inputLayer, outputLayer);
             else
-                hidden[i].Initialize(hidden[i - 1]);
+                hidden[i].Initialize(hidden[i - 1], i > hidden.Length ? outputLayer : hidden[i]);
         }
-        outputLayer.Initialize(hidden[hidden.Length > 1 ? hidden.Length - 1 : 0]);
+        outputLayer.Initialize(hidden[hidden.Length > 1 ? hidden.Length - 1 : 0], null);
     }
 
     /*public void Train(float[] inputs, float[] desiredOutputs, int epochs, float learningRate)
@@ -94,11 +94,11 @@ internal class NeuralNetwork
                 for (int j = 0; j < outputLayer.PreviousLayer.NeuronValues.Length; j++)
                 {
                     int weightIndex = outputLayer.PreviousLayer.NeuronValues.Length * i + j;
-                    outputLayer.Weight[weightIndex] -= learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
+                    outputLayer.Weight[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
                 }
 
                 // Update biases for the output layer
-                outputLayer.Biases[i] -= learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]);
+                outputLayer.Biases[i] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]);
             }
 
             // Calculate the errors fro the hidden layer
@@ -119,45 +119,14 @@ internal class NeuralNetwork
                 for (int j = 0; j < inputs.Length; j++)
                 {
                     int weightIndex = inputs.Length * i + j;
-                    outputLayer.PreviousLayer.Weight[weightIndex] -= learningRate * outputLayer.PreviousLayer.Errors[i] * inputs[j];
+                    outputLayer.PreviousLayer.Weight[weightIndex] += learningRate * outputLayer.PreviousLayer.Errors[i] * inputs[j];
                 }
 
                 // Update biases for the hidden layer
-                outputLayer.PreviousLayer.Biases[i] -= learningRate * outputLayer.PreviousLayer.Errors[i];
+                outputLayer.PreviousLayer.Biases[i] += learningRate * outputLayer.PreviousLayer.Errors[i];
             }
         }
     }
 
-    public float[] FeedForward(float[] data)
-    {
-        if (data.Length != inputLayer.Size)
-            throw new Exception("Input size is not the same as the number of layers");
-
-        //fill the input neurons with its corresponding data
-        for (int i = 0; i < data.Length; i++)
-        {
-            inputLayer.NeuronValues[i] = data[i];
-        }
-
-        foreach (var hidden in hiddenLayers)
-        {
-            for (int i = 0; i < hidden.Size; i++)
-            {
-                for (int j = 0; j < hidden.PreviousLayer.Size; j++)
-                {
-                    hidden.NeuronValues[i] = MathHelper.Sigmoid(hidden.Weight[i * hidden.PreviousLayer.NeuronValues.Length + j] + hidden.Biases[i]);
-                }
-            }
-        }
-
-        for (int i = 0; i < outputLayer.Size; i++)
-        {
-            for (int j = 0; j < outputLayer.PreviousLayer.Size; j++)
-            {
-                outputLayer.NeuronValues[i] = MathHelper.Sigmoid(outputLayer.Weight[i * outputLayer.PreviousLayer.NeuronValues.Length + j] + outputLayer.Biases[i]);
-            }
-
-        }
-        return outputLayer.NeuronValues;
-    }
+    
 }
