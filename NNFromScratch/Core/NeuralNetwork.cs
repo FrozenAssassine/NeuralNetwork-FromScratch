@@ -26,7 +26,6 @@ internal class NeuralNetwork
         outputLayer.Initialize(hidden[hidden.Length > 1 ? hidden.Length - 1 : 0]);
     }
 
-
     public void Train(float[] inputs, float[] desiredOutputs, int epochs, float learningRate)
     {
         for (int e = 0; e < epochs; e++)
@@ -35,13 +34,13 @@ internal class NeuralNetwork
             float[] res = FeedForward(inputs);
 
             // Calculate errors for the output layer
-            for (int i = 0; i < outputLayer.NeuronValues.Length; i++)
+            Parallel.For(0, outputLayer.NeuronValues.Length, (i) =>
             {
                 outputLayer.Errors[i] = desiredOutputs[i] - res[i];
-            }
+            });
 
             // Update weights and biases for the output layer
-            for (int i = 0; i < outputLayer.Size; i++)
+            Parallel.For(0, outputLayer.Size, (i) =>
             {
                 for (int j = 0; j < outputLayer.PreviousLayer.Size; j++)
                 {
@@ -49,7 +48,7 @@ internal class NeuralNetwork
                     outputLayer.Weights[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
                 }
                 outputLayer.Biases[i] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]);
-            }
+            });
 
             // Backpropagate the errors to the hidden layers
             for (int h = hiddenLayers.Length - 1; h >= 0; h--)
@@ -93,7 +92,7 @@ internal class NeuralNetwork
             inputLayer.NeuronValues[i] = data[i];
         }
 
-        float sum = 0.0f;
+        float sum;
         foreach(var hidden in hiddenLayers)
         {
             for (int i = 0; i < hidden.Size; i++)

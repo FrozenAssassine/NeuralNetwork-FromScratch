@@ -4,6 +4,7 @@ using NNFromScratch.Helper;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 public class NNModel
 {
@@ -34,7 +35,7 @@ public class NNModel
         return prediction;
     }
 
-    public void Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.01f)
+    public void Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.01f, bool evaluate = false, int evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
@@ -58,13 +59,17 @@ public class NNModel
                             trainingTimeSW.Stop();
                             trainingTimeSW.Restart();
                         }
-                        nn.Train(inputs[0], desired[0], 1, learningRate);
+                        nn.Train(inputs[i], desired[i], 1, learningRate);
                     }
                 }
                 Console.WriteLine($"Epoch {e} took {epochTime.ElapsedMilliseconds}ms; avg({(int)averageStepTime / (inputs.Length / 1000)}ms/step");
+
+                //evaluate
+                int percent = inputs.Length / 100 * evaluatePercent;
+                Evaluate(inputs.Take(percent).ToArray(), desired.Take(percent).ToArray());
             }
         });
-        Console.WriteLine($"Training took: {trainingTime }");
+        Console.WriteLine($"Training took: {trainingTime}");
     }
 
     public void Save(string path)
@@ -86,16 +91,17 @@ public class NNModel
         int correct = 0;
         for (int i = 0; i < x.Length; i++)
         {
-            if(y[i][0] == MathHelper.GetMaximumIndex(nn.FeedForward(x[i])))
+            if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(nn.FeedForward(x[i])))
+            {
                 correct++;
+            }
         }
 
-        float percent = x.Length / correct;
-
+        float accuracy = (float)correct / x.Length;
         if(output)
-            Console.WriteLine($"Evaluation: {x.Length}/{correct} ({percent})");
+            Console.WriteLine($"Evaluation: {x.Length}/{correct} ({accuracy.ToString().Replace(",", ".")})");
 
-        return (percent, x.Length, correct);
+        return (accuracy, x.Length, correct);
     }
     
     public void Summary()
