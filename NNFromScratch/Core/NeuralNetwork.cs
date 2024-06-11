@@ -26,10 +26,8 @@ internal class NeuralNetwork
         outputLayer.Initialize(hidden[hidden.Length > 1 ? hidden.Length - 1 : 0]);
     }
 
-    public void Train(float[] inputs, float[] desiredOutputs, int epochs, float learningRate)
+    public void Train(float[] inputs, float[] desiredOutputs, float learningRate)
     {
-        for (int e = 0; e < epochs; e++)
-        {
             // Perform feedforward pass to get the network's output
             float[] res = FeedForward(inputs);
 
@@ -50,34 +48,33 @@ internal class NeuralNetwork
                 outputLayer.Biases[i] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]);
             });
 
-            // Backpropagate the errors to the hidden layers
-            for (int h = hiddenLayers.Length - 1; h >= 0; h--)
+        // Backpropagate the errors to the hidden layers
+        for (int h = hiddenLayers.Length - 1; h >= 0; h--)
+        {
+            //int h = hiddenLayers.Length - 1 - index;
+            Layer currentLayer = hiddenLayers[h];
+            Layer nextLayer = (h == hiddenLayers.Length - 1) ? outputLayer : hiddenLayers[h + 1];
+            Layer previousLayer = (h == 0) ? inputLayer : hiddenLayers[h - 1];
+
+            float error = 0.0f;
+            Parallel.For(0, currentLayer.Size, (i) =>
             {
-                //int h = hiddenLayers.Length - 1 - index;
-                Layer currentLayer = hiddenLayers[h];
-                Layer nextLayer = (h == hiddenLayers.Length - 1) ? outputLayer : hiddenLayers[h + 1];
-                Layer previousLayer = (h == 0) ? inputLayer : hiddenLayers[h - 1];
-
-                float error = 0.0f;
-                Parallel.For(0, currentLayer.Size, (i) =>
+                error = 0.0f;
+                //calculate and update error:
+                for (int j = 0; j < nextLayer.Size; j++)
                 {
-                    error = 0.0f;
-                    //calculate and update error:
-                    for (int j = 0; j < nextLayer.Size; j++)
-                    {
-                        error += nextLayer.Errors[j] * nextLayer.Weights[j * currentLayer.Size + i];
-                    }
-                    currentLayer.Errors[i] = error * MathHelper.SigmoidDerivative(currentLayer.NeuronValues[i]);
+                    error += nextLayer.Errors[j] * nextLayer.Weights[j * currentLayer.Size + i];
+                }
+                currentLayer.Errors[i] = error * MathHelper.SigmoidDerivative(currentLayer.NeuronValues[i]);
 
-                    //update biases and weights:
-                    for (int j = 0; j < previousLayer.Size; j++)
-                    {
-                        currentLayer.Weights[i * previousLayer.Size + j] +=
-                            learningRate * currentLayer.Errors[i] * previousLayer.NeuronValues[j];
-                    }
-                    currentLayer.Biases[i] += learningRate * currentLayer.Errors[i];
-                });
-            }
+                //update biases and weights:
+                for (int j = 0; j < previousLayer.Size; j++)
+                {
+                    currentLayer.Weights[i * previousLayer.Size + j] +=
+                        learningRate * currentLayer.Errors[i] * previousLayer.NeuronValues[j];
+                }
+                currentLayer.Biases[i] += learningRate * currentLayer.Errors[i];
+            });
         }
     }
 

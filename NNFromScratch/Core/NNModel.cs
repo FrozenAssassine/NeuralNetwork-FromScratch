@@ -35,10 +35,13 @@ public class NNModel
         return prediction;
     }
 
-    public void Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.01f, bool evaluate = false, int evaluatePercent = 10)
+    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.01f, bool evaluate = false, int evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
+
+        Console.WriteLine(new string('-', 50) + "\n");
+        float[] accuracys = new float[epochs];
 
         var trainingTime = BenchmarkExtension.Benchmark(() =>
         {
@@ -55,21 +58,28 @@ public class NNModel
                         if (i % 1000 == 0)
                         {
                             averageStepTime += trainingTimeSW.ElapsedMilliseconds;
-                            Console.WriteLine($"Epoch {e}/{epochs}; {i}/{inputs.Length}; ({trainingTimeSW.ElapsedMilliseconds}ms, {trainingTimeSW.ElapsedTicks}ticks)");
+                            Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1000}/{inputs.Length}; ({trainingTimeSW.ElapsedMilliseconds}ms, {trainingTimeSW.ElapsedTicks}ticks)");
                             trainingTimeSW.Stop();
                             trainingTimeSW.Restart();
                         }
-                        nn.Train(inputs[i], desired[i], 1, learningRate);
+                        nn.Train(inputs[i], desired[i], learningRate);
                     }
                 }
+                Console.WriteLine(new string('-', 50));
                 Console.WriteLine($"Epoch {e} took {epochTime.ElapsedMilliseconds}ms; avg({(int)averageStepTime / (inputs.Length / 1000)}ms/step");
 
                 //evaluate
                 int percent = inputs.Length / 100 * evaluatePercent;
+                accuracys[e] = percent;
                 Evaluate(inputs.Take(percent).ToArray(), desired.Take(percent).ToArray());
+
+                if(e!=epochs-1)
+                    Console.WriteLine(new string('-', 50));
             }
         });
-        Console.WriteLine($"Training took: {trainingTime}");
+        Console.WriteLine(new string('=', 50) + "\n");
+        Console.WriteLine($"Training took: {trainingTime}\n");
+        return accuracys;
     }
 
     public void Save(string path)

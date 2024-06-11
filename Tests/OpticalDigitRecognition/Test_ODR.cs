@@ -28,7 +28,7 @@ public class Test_ODR
         if (train)
         {
             //model.Load("D:\\odr1.cool");
-            model.Train(imageData.x, imageData.y, epochs: 10, learningRate: 0.1f);
+            model.Train(imageData.x, imageData.y, epochs: 2, learningRate: 0.1f);
 
             Console.WriteLine(BenchmarkExtension.Benchmark(() =>
             {
@@ -39,8 +39,7 @@ public class Test_ODR
 
         if (!train)
         {
-            //recognizer.Load("D:\\odr.cool");
-            //recognizer.Classify(".\\test\\2.png", true);
+            //model.Load("D:\\odr.cool");
         }
     }
 
