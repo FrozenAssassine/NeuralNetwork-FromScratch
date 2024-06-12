@@ -40,7 +40,7 @@ public class NNModel
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
 
-        int loggingInterval = 10;
+        int loggingInterval = 1000;
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];
@@ -68,7 +68,7 @@ public class NNModel
                     }
                 }
                 Console.WriteLine(new string('-', 50));
-                Console.WriteLine($"Epoch {e} took {epochTime.ElapsedMilliseconds}ms; avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step");
+                Console.WriteLine($"Epoch {e} took {epochTime.ElapsedMilliseconds}ms; " + (averageStepTime > 0 ? $"avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step" : ""));
 
                 //evaluate
                 int percent = inputs.Length / 100 * evaluatePercent;
@@ -111,13 +111,13 @@ public class NNModel
 
         float accuracy = (float)correct / x.Length;
         if(output)
-            Console.WriteLine($"Evaluation: {x.Length}/{correct} ({accuracy.ToString().Replace(",", ".")})");
+            Console.WriteLine($"Evaluation: {x.Length}/{correct} ({accuracy.ToString().Replace(",", ".")}) ({(int)(accuracy * 100.0f)}%)");
 
         return (accuracy, x.Length, correct);
     }
     
     public void Summary()
     {
-
+        nn.Summary();
     }
 }

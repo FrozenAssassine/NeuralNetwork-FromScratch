@@ -31,5 +31,10 @@ namespace NNFromScratch
 
             return $"{sw.ElapsedMilliseconds}ms ({sw.ElapsedTicks}ticks)";
         }
+
+        public static void Benchmark(Action action, string name)
+        {
+            Console.WriteLine(name + " took " + Benchmark(action));
+        }
     }
 }

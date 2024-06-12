@@ -30,9 +30,12 @@ public class Layer
             this.Weights = new float[previousLayer.Size * this.Size];
 
         FillRandom();
+    }
 
-        if (previousLayer != null)
-            Console.WriteLine("\tConnected with " + previousLayer.Name + " with " + Weights.Length + " Weights");
+    public void Summary()
+    {
+        if (PreviousLayer != null)
+            Console.WriteLine("=> Connected with " + PreviousLayer.Name + " with " + Weights.Length + " Weights");
         Console.WriteLine("Initialize layer " + Name + " with " + Size + " Neurons");
     }
 

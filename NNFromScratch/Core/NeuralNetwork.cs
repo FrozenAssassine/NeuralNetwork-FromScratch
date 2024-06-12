@@ -57,6 +57,7 @@ internal class NeuralNetwork
             Layer previousLayer = (h == 0) ? inputLayer : hiddenLayers[h - 1];
 
             float error = 0.0f;
+            
             Parallel.For(0, currentLayer.Size, (i) =>
             {
                 error = 0.0f;
@@ -83,38 +84,35 @@ internal class NeuralNetwork
         if (data.Length != inputLayer.Size)
             throw new Exception("Input size is not the same as the number of layers");
 
-        //fill the input neurons with its corresponding data
         for (int i = 0; i < data.Length; i++)
         {
             inputLayer.NeuronValues[i] = data[i];
         }
 
-        float sum;
-        foreach(var hidden in hiddenLayers)
+        foreach (var hidden in hiddenLayers)
         {
             for (int i = 0; i < hidden.Size; i++)
             {
-                sum = 0.0f;
+                float sum = 0.0f;
                 for (int j = 0; j < hidden.PreviousLayer.Size; j++)
                 {
-                    int weightIndex = i * hidden.PreviousLayer.Size + j;
-                    sum += hidden.PreviousLayer.NeuronValues[j] * hidden.Weights[weightIndex];
+                    sum += hidden.PreviousLayer.NeuronValues[j] * hidden.Weights[i * hidden.PreviousLayer.Size + j];
                 }
                 hidden.NeuronValues[i] = MathHelper.Sigmoid(sum + hidden.Biases[i]);
             }
         }
 
         // Compute neuron values for output layer
-        for(int i = 0; i < outputLayer.Size; i++)
+        Parallel.For(0, outputLayer.Size, (i) =>
         {
-            sum = 0.0f;
+            float sum = 0.0f;
             for (int j = 0; j < outputLayer.PreviousLayer.Size; j++)
             {
                 int weightIndex = i * outputLayer.PreviousLayer.Size + j;
                 sum += outputLayer.PreviousLayer.NeuronValues[j] * outputLayer.Weights[weightIndex];
             }
             outputLayer.NeuronValues[i] = MathHelper.Sigmoid(sum + outputLayer.Biases[i]);
-        }
+        });
         return outputLayer.NeuronValues;
     }
 
@@ -146,5 +144,17 @@ internal class NeuralNetwork
             l.Load(br);
         }
         br.Dispose();
+    }
+
+    public void Summary()
+    {
+        Console.WriteLine(new string('-', 50));
+        inputLayer.Summary();
+        foreach (var hidden in hiddenLayers)
+        {
+            hidden.Summary();
+        }
+        outputLayer.Summary();
+        Console.WriteLine(new string('=', 50));
     }
 }
