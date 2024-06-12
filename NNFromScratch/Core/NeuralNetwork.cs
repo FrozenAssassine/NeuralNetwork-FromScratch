@@ -78,7 +78,6 @@ internal class NeuralNetwork
             });
         }
     }
-
     public float[] FeedForward(float[] data)
     {
         if (data.Length != inputLayer.Size)

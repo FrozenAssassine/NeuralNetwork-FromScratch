@@ -40,7 +40,7 @@ public class NNModel
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
 
-        int loggingInterval = 1000;
+        int loggingInterval = 10;
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];

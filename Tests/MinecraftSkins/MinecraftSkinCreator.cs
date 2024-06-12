@@ -12,11 +12,11 @@ internal class MinecraftSkinCreator
 
     public static void Run()
     {
-        var images = GetImages("F:\\NN DATASETS\\skins", 1000);
+        var images = GetImages("F:\\NN DATASETS\\skins", 5000);
         float[][] x = new float[images.Length][];
         for(int i = 0;i < images.Length; i++)
         {
-            x[i] = new float[] { i / 1000.0f };
+            x[i] = new float[] { i / 5000.0f };
         }
 
         NNModel model = new NNModel(new Layer[]
@@ -26,10 +26,10 @@ internal class MinecraftSkinCreator
             new Layer(512),
             new Layer(imageWidth * imageHeight * 4),
         });
-        //model.Train(x, images, 5, 0.1f);
-        //model.Save("D:\\mctest.cool");
+        model.Train(x, images, 5, 0.1f);
+        model.Save("D:\\mctest.cool");
 
-        model.Load("D:\\mctest.cool");
+        //model.Load("D:\\mctest.cool");
 
         MakeImage(model);
     }
@@ -42,7 +42,6 @@ internal class MinecraftSkinCreator
         {
             images[index++] = GetImagePixel(file);
         }
-
         return images;
     }
 
