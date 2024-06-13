@@ -1,7 +1,6 @@
 ﻿namespace NNFromScratch.Core;
 
 using NNFromScratch.Helper;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -15,6 +14,16 @@ public class NNModel
         if(layers.Length < 3)
         {
             throw new Exception("You need at least one input, hidden and output layer");
+        }
+
+        //initialize the cuda accelerator and pass the total number of layers:
+        CudaAccel.Init(layers.Length);
+
+        //pass the references for all c# arrays to the c++ code:
+        int layerIndex = 0;
+        foreach(var layer in layers)
+        {
+            CudaAccel.InitLayer(layerIndex++, layer.Biases, layer.NeuronValues, layer.Errors, layer.Weights, layer.Size);
         }
 
         var hidden = layers.Length == 1 ? layers.Skip(1) : layers.Skip(1).Take(layers.Length - 2);
@@ -40,7 +49,7 @@ public class NNModel
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
 
-        int loggingInterval = 10;
+        int loggingInterval = 1000;
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];

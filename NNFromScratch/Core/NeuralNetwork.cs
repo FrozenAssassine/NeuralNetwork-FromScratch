@@ -26,13 +26,13 @@ internal class NeuralNetwork
         outputLayer.Initialize(hidden[hidden.Length > 1 ? hidden.Length - 1 : 0]);
     }
 
-    public void Train(float[] inputs, float[] desiredOutputs, float learningRate)
+    public void Train2(float[] inputs, float[] desiredOutputs, float learningRate)
     {
             // Perform feedforward pass to get the network's output
             float[] res = FeedForward(inputs);
 
             // Calculate errors for the output layer
-            Parallel.For(0, outputLayer.NeuronValues.Length, (i) =>
+            Parallel.For(0, outputLayer.Size, (i) =>
             {
                 outputLayer.Errors[i] = desiredOutputs[i] - res[i];
             });
@@ -60,13 +60,17 @@ internal class NeuralNetwork
             
             Parallel.For(0, currentLayer.Size, (i) =>
             {
+
+
                 error = 0.0f;
                 //calculate and update error:
                 for (int j = 0; j < nextLayer.Size; j++)
                 {
-                    error += nextLayer.Errors[j] * nextLayer.Weights[j * currentLayer.Size + i];
+                    error += (nextLayer.Errors[j] * nextLayer.Weights[j * currentLayer.Size + i]);
                 }
                 currentLayer.Errors[i] = error * MathHelper.SigmoidDerivative(currentLayer.NeuronValues[i]);
+
+
 
                 //update biases and weights:
                 for (int j = 0; j < previousLayer.Size; j++)
@@ -101,7 +105,7 @@ internal class NeuralNetwork
             }
         }
 
-        // Compute neuron values for output layer
+        //// Compute neuron values for output layer
         Parallel.For(0, outputLayer.Size, (i) =>
         {
             float sum = 0.0f;
@@ -113,6 +117,11 @@ internal class NeuralNetwork
             outputLayer.NeuronValues[i] = MathHelper.Sigmoid(sum + outputLayer.Biases[i]);
         });
         return outputLayer.NeuronValues;
+    }
+
+    public void Train(float[] inputs, float[] desiredOutputs, float learningRate)
+    {
+        CudaAccel.Train(inputs, desiredOutputs, inputs.Length, learningRate);
     }
 
     public void Save(Stream stream)

@@ -25,10 +25,11 @@ public class Test_ODR
             new Layer(64, "Hidden2"),
             new Layer(10, "Output"),
         });
+
         if (train)
         {
             //model.Load("D:\\odr1.cool");
-            model.Train(imageData.x, imageData.y, epochs: 2, learningRate: 0.1f);
+            model.Train(imageData.x, imageData.y, epochs: 10, learningRate: 0.1f);
 
             Console.WriteLine(BenchmarkExtension.Benchmark(() =>
             {
@@ -36,6 +37,7 @@ public class Test_ODR
             }));
             model.Save("D:\\odr.cool");
         }
+
 
         if (!train)
         {
