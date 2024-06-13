@@ -23,7 +23,10 @@ public class NNModel
         int layerIndex = 0;
         foreach(var layer in layers)
         {
-            CudaAccel.InitLayer(layerIndex++, layer.Biases, layer.NeuronValues, layer.Errors, layer.Weights, layer.Size);
+            int prevSize = layerIndex > 0 ? layers[layerIndex - 1].Size : 0;
+            CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.NeuronValues, layer.Errors, layer.Weights);
+
+            Console.WriteLine("INIT: " + layerIndex + ":" + prevSize + ":" + layer.Size);
         }
 
         var hidden = layers.Length == 1 ? layers.Skip(1) : layers.Skip(1).Take(layers.Length - 2);

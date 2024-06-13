@@ -1,4 +1,5 @@
 ﻿using NNFromScratch.Helper;
+using System.Runtime.InteropServices;
 
 namespace NNFromScratch.Core;
 
@@ -60,8 +61,6 @@ internal class NeuralNetwork
             
             Parallel.For(0, currentLayer.Size, (i) =>
             {
-
-
                 error = 0.0f;
                 //calculate and update error:
                 for (int j = 0; j < nextLayer.Size; j++)
@@ -69,8 +68,6 @@ internal class NeuralNetwork
                     error += (nextLayer.Errors[j] * nextLayer.Weights[j * currentLayer.Size + i]);
                 }
                 currentLayer.Errors[i] = error * MathHelper.SigmoidDerivative(currentLayer.NeuronValues[i]);
-
-
 
                 //update biases and weights:
                 for (int j = 0; j < previousLayer.Size; j++)
