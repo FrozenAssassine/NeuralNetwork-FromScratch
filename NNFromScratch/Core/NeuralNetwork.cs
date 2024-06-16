@@ -1,4 +1,5 @@
 ﻿using NNFromScratch.Helper;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace NNFromScratch.Core;
 
@@ -26,27 +27,27 @@ internal class NeuralNetwork
         outputLayer.Initialize(hidden[hidden.Length > 1 ? hidden.Length - 1 : 0]);
     }
 
-    public void Train(float[] inputs, float[] desiredOutputs, float learningRate)
+    private void Train_CPU(float[] inputs, float[] desiredOutputs, float learningRate)
     {
-            // Perform feedforward pass to get the network's output
-            float[] res = FeedForward(inputs);
+        // Perform feedforward pass to get the network's output
+        float[] res = FeedForward_CPU(inputs);
 
-            // Calculate errors for the output layer
-            Parallel.For(0, outputLayer.NeuronValues.Length, (i) =>
-            {
-                outputLayer.Errors[i] = desiredOutputs[i] - res[i];
-            });
+        // Calculate errors for the output layer
+        Parallel.For(0, outputLayer.Size, (i) =>
+        {
+            outputLayer.Errors[i] = desiredOutputs[i] - res[i];
+        });
 
-            // Update weights and biases for the output layer
-            Parallel.For(0, outputLayer.Size, (i) =>
+        // Update weights and biases for the output layer
+        Parallel.For(0, outputLayer.Size, (i) =>
+        {
+            for (int j = 0; j < outputLayer.PreviousLayer.Size; j++)
             {
-                for (int j = 0; j < outputLayer.PreviousLayer.Size; j++)
-                {
-                    int weightIndex = i * outputLayer.PreviousLayer.Size + j;
-                    outputLayer.Weights[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
-                }
-                outputLayer.Biases[i] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]);
-            });
+                int weightIndex = i * outputLayer.PreviousLayer.Size + j;
+                outputLayer.Weights[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
+            }
+            outputLayer.Biases[i] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]);
+        });
 
         // Backpropagate the errors to the hidden layers
         for (int h = hiddenLayers.Length - 1; h >= 0; h--)
@@ -64,7 +65,7 @@ internal class NeuralNetwork
                 //calculate and update error:
                 for (int j = 0; j < nextLayer.Size; j++)
                 {
-                    error += nextLayer.Errors[j] * nextLayer.Weights[j * currentLayer.Size + i];
+                    error += (nextLayer.Errors[j] * nextLayer.Weights[j * currentLayer.Size + i]);
                 }
                 currentLayer.Errors[i] = error * MathHelper.SigmoidDerivative(currentLayer.NeuronValues[i]);
 
@@ -78,7 +79,7 @@ internal class NeuralNetwork
             });
         }
     }
-    public float[] FeedForward(float[] data)
+    private float[] FeedForward_CPU(float[] data)
     {
         if (data.Length != inputLayer.Size)
             throw new Exception("Input size is not the same as the number of layers");
@@ -88,6 +89,7 @@ internal class NeuralNetwork
             inputLayer.NeuronValues[i] = data[i];
         }
 
+        //calculate neuron values for hidden layer:
         foreach (var hidden in hiddenLayers)
         {
             for (int i = 0; i < hidden.Size; i++)
@@ -101,7 +103,7 @@ internal class NeuralNetwork
             }
         }
 
-        // Compute neuron values for output layer
+        //Compute neuron values for output layer
         Parallel.For(0, outputLayer.Size, (i) =>
         {
             float sum = 0.0f;
@@ -112,7 +114,29 @@ internal class NeuralNetwork
             }
             outputLayer.NeuronValues[i] = MathHelper.Sigmoid(sum + outputLayer.Biases[i]);
         });
+
         return outputLayer.NeuronValues;
+    }
+    private float[] FeedForward_GPU(float[] data)
+    {
+        float[] prediction = new float[outputLayer.Size];
+        CudaAccel.Predict(data, prediction, inputLayer.Size);
+        return prediction;
+    }
+
+    public float[] FeedForward(float[] data, bool useCuda)
+    {
+        if (useCuda)
+            return FeedForward_GPU(data);
+        return FeedForward_CPU(data);
+    }
+
+    public void Train(float[] inputs, float[] desiredOutputs, float learningRate, bool useCuda)
+    {
+        if (useCuda)
+            CudaAccel.Train(inputs, desiredOutputs, inputs.Length, learningRate);
+        else
+            Train_CPU(inputs, desiredOutputs, learningRate);
     }
 
     public void Save(Stream stream)
