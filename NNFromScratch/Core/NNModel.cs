@@ -47,14 +47,14 @@ public class NNModel
         return prediction;
     }
 
-    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.01f, bool evaluate = false, int evaluatePercent = 10)
+    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, bool evaluate = false, int evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
 
         int loggingInterval = 1000;
 
-        Console.WriteLine("VALUE BEFORE, " + string.Join(',', nn.hiddenLayers[0].Weights.Take(50)));
+        Console.WriteLine("VALUE BEFORE, " + string.Join(';', nn.hiddenLayers[1].Errors.Take(50)));
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];
@@ -97,7 +97,7 @@ public class NNModel
 
         CudaAccel.DoneTraining();
         
-        Console.WriteLine("VALUE AFTER, " + string.Join(',', nn.hiddenLayers[0].Weights.Take(50)));
+        Console.WriteLine("VALUE AFTER, " + string.Join(';', nn.hiddenLayers[1].Errors.Take(50)));
 
         return accuracys;
     }
