@@ -11,26 +11,26 @@ public class NNModel
 
     public NNModel(Layer[] layers)
     {
-        if(layers.Length < 3)
+        if (layers.Length < 3)
         {
             throw new Exception("You need at least one input, hidden and output layer");
         }
+
+        var hidden = layers.Length == 1 ? layers.Skip(1) : layers.Skip(1).Take(layers.Length - 2);
+        nn = new NeuralNetwork(layers[0], hidden.ToArray(), layers[layers.Length - 1]);
 
         //initialize the cuda accelerator and pass the total number of layers:
         CudaAccel.Init(layers.Length);
 
         //pass the references for all c# arrays to the c++ code:
         int layerIndex = 0;
-        foreach(var layer in layers)
+        foreach (var layer in layers)
         {
             int prevSize = layerIndex > 0 ? layers[layerIndex - 1].Size : 0;
-            CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.NeuronValues, layer.Errors, layer.Weights);
+            CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors);
 
             Console.WriteLine("INIT: " + layerIndex + ":" + prevSize + ":" + layer.Size);
         }
-
-        var hidden = layers.Length == 1 ? layers.Skip(1) : layers.Skip(1).Take(layers.Length - 2);
-        nn = new NeuralNetwork(layers[0], hidden.ToArray(), layers[layers.Length - 1]);
     }
 
     public float[] Predict(float[] input, bool output = false)
@@ -53,6 +53,8 @@ public class NNModel
             throw new Exception("Input size does not match input layer count");
 
         int loggingInterval = 1000;
+
+        Console.WriteLine("VALUE BEFORE, " + string.Join(',', nn.hiddenLayers[0].Weights.Take(50)));
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];
@@ -87,12 +89,16 @@ public class NNModel
                 accuracys[e] = percent;
                 Evaluate(inputs.Take(percent).ToArray(), desired.Take(percent).ToArray());
 
-                if(e!=epochs-1)
+                if (e != epochs - 1)
                     Console.WriteLine(new string('-', 50));
             }
         });
-        Console.WriteLine(new string('=', 50) + "\n");
-        Console.WriteLine($"Training took: {trainingTime}\n");
+
+
+        CudaAccel.DoneTraining();
+        
+        Console.WriteLine("VALUE AFTER, " + string.Join(',', nn.hiddenLayers[0].Weights.Take(50)));
+
         return accuracys;
     }
 
@@ -132,4 +138,5 @@ public class NNModel
     {
         nn.Summary();
     }
+
 }

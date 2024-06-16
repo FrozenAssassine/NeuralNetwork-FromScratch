@@ -1,6 +1,7 @@
 ﻿using Tests.XOR;
 using Tests.TestODR;
 using Tests.MCSkinCreator;
+
 public class Program
 {
     public static void Main(string[] args)

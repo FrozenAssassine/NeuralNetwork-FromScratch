@@ -4,15 +4,24 @@ namespace NNFromScratch.Helper;
 
 internal static class CudaAccel
 {
-    [DllImport("CudaC#Wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
+    const string DDL_PATH = "F:\\C#\\NNFromScratch\\x64\\Release\\CudaWrapper.dll"; //your cuda dll path
+
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern void InitLayer(int layerIndex, int prevSize, int size, float[] biases, float[] weights, float[] values, float[] errors);
 
-    [DllImport("CudaC#Wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern void Init(int totalLayer);
 
-    [DllImport("CudaC#Wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern void Train(float[] inputs, float[] desiredOutputs, int size, float learningRate);
 
-    [DllImport("CudaC#Wrapper.dll", CallingConvention = CallingConvention.Cdecl)]
-    public static extern float[] FeedForward(float[] data, int n);
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void Predict(float[] data, float[] prediction, int n);
+    
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void Test();
+
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void DoneTraining();
+
 }

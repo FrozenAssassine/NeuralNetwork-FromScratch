@@ -1,5 +1,5 @@
 ﻿using NNFromScratch.Helper;
-using System.Runtime.InteropServices;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace NNFromScratch.Core;
 
@@ -29,25 +29,25 @@ internal class NeuralNetwork
 
     public void Train2(float[] inputs, float[] desiredOutputs, float learningRate)
     {
-            // Perform feedforward pass to get the network's output
-            float[] res = FeedForward(inputs);
+        // Perform feedforward pass to get the network's output
+        float[] res = FeedForward(inputs);
 
-            // Calculate errors for the output layer
-            Parallel.For(0, outputLayer.Size, (i) =>
-            {
-                outputLayer.Errors[i] = desiredOutputs[i] - res[i];
-            });
+        // Calculate errors for the output layer
+        Parallel.For(0, outputLayer.Size, (i) =>
+        {
+            outputLayer.Errors[i] = desiredOutputs[i] - res[i];
+        });
 
-            // Update weights and biases for the output layer
-            Parallel.For(0, outputLayer.Size, (i) =>
+        // Update weights and biases for the output layer
+        Parallel.For(0, outputLayer.Size, (i) =>
+        {
+            for (int j = 0; j < outputLayer.PreviousLayer.Size; j++)
             {
-                for (int j = 0; j < outputLayer.PreviousLayer.Size; j++)
-                {
-                    int weightIndex = i * outputLayer.PreviousLayer.Size + j;
-                    outputLayer.Weights[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
-                }
-                outputLayer.Biases[i] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]);
-            });
+                int weightIndex = i * outputLayer.PreviousLayer.Size + j;
+                outputLayer.Weights[weightIndex] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]) * outputLayer.PreviousLayer.NeuronValues[j];
+            }
+            outputLayer.Biases[i] += learningRate * outputLayer.Errors[i] * MathHelper.SigmoidDerivative(outputLayer.NeuronValues[i]);
+        });
 
         // Backpropagate the errors to the hidden layers
         for (int h = hiddenLayers.Length - 1; h >= 0; h--)
@@ -89,6 +89,7 @@ internal class NeuralNetwork
             inputLayer.NeuronValues[i] = data[i];
         }
 
+        //calculate neuron values for hidden layer:
         foreach (var hidden in hiddenLayers)
         {
             for (int i = 0; i < hidden.Size; i++)
@@ -102,7 +103,7 @@ internal class NeuralNetwork
             }
         }
 
-        //// Compute neuron values for output layer
+        //Compute neuron values for output layer
         Parallel.For(0, outputLayer.Size, (i) =>
         {
             float sum = 0.0f;
@@ -113,11 +114,20 @@ internal class NeuralNetwork
             }
             outputLayer.NeuronValues[i] = MathHelper.Sigmoid(sum + outputLayer.Biases[i]);
         });
+
         return outputLayer.NeuronValues;
+    }
+    public float[] FeedForward2(float[] data)
+    {
+        float[] prediction = new float[outputLayer.Size];
+        CudaAccel.Predict(data, prediction, inputLayer.Size);
+
+        return prediction;
     }
 
     public void Train(float[] inputs, float[] desiredOutputs, float learningRate)
     {
+        //CudaAccel.Test();
         CudaAccel.Train(inputs, desiredOutputs, inputs.Length, learningRate);
     }
 
