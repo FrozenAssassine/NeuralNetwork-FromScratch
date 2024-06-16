@@ -6,9 +6,9 @@
 
 <h1 align="center">Neural Network from scratch with CUDA Support</h1>
 <div align="center">
-    <img src="https://img.shields.io/github/stars/FrozenAssassine/NNFromScratch?style=flat"/>
-    <img src="https://img.shields.io/github/issues-pr/FrozenAssassine/NNFromScratch?style=flat"/>
-    <img src="https://img.shields.io/github/repo-size/FrozenAssassine/NNFromScratch?style=flat"/>
+    <img src="https://img.shields.io/github/stars/FrozenAssassine/NeuralNetwork-FromScratch?style=flat"/>
+    <img src="https://img.shields.io/github/issues-pr/FrozenAssassine/NeuralNetwork-FromScratch?style=flat"/>
+    <img src="https://img.shields.io/github/repo-size/FrozenAssassine/NeuralNetwork-FromScratch?style=flat"/>
 </div>
 
 ## 🤔 What is this project?
