@@ -28,8 +28,6 @@ public class NNModel
         {
             int prevSize = layerIndex > 0 ? layers[layerIndex - 1].Size : 0;
             CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors);
-
-            Console.WriteLine("INIT: " + layerIndex + ":" + prevSize + ":" + layer.Size);
         }
     }
 
@@ -38,7 +36,7 @@ public class NNModel
         float[] prediction = null;
         var time = BenchmarkExtension.Benchmark(() =>
         {
-            prediction = nn.FeedForward(input);
+            prediction = nn.FeedForward(input, false);
         });
 
         if (output)
@@ -47,14 +45,18 @@ public class NNModel
         return prediction;
     }
 
-    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, bool evaluate = false, int evaluatePercent = 10)
+    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, bool useCuda = true, bool evaluate = false, int evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
 
-        int loggingInterval = 1000;
+        //let cuda check for available devices:
+        if (useCuda)
+        {
+            useCuda = CudaAccel.CheckCuda();
+        }
 
-        Console.WriteLine("VALUE BEFORE, " + string.Join(';', nn.hiddenLayers[1].Errors.Take(50)));
+        int loggingInterval = 1000;
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];
@@ -78,27 +80,29 @@ public class NNModel
                             trainingTimeSW.Stop();
                             trainingTimeSW.Restart();
                         }
-                        nn.Train(inputs[i], desired[i], learningRate);
+                        nn.Train(inputs[i], desired[i], learningRate, useCuda);
                     }
                 }
                 Console.WriteLine(new string('-', 50));
                 Console.WriteLine($"Epoch {e} took {epochTime.ElapsedMilliseconds}ms; " + (averageStepTime > 0 ? $"avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step" : ""));
 
-                //evaluate
-                int percent = inputs.Length / 100 * evaluatePercent;
-                accuracys[e] = percent;
-                Evaluate(inputs.Take(percent).ToArray(), desired.Take(percent).ToArray());
+                //evaluate after every epoch
+                if (evaluate)
+                {
+                    int percent = inputs.Length / 100 * evaluatePercent;
+                    accuracys[e] = percent;
+                    Evaluate(inputs.Take(percent).ToArray(), desired.Take(percent).ToArray(), false);
+                }
 
                 if (e != epochs - 1)
                     Console.WriteLine(new string('-', 50));
             }
         });
 
-
-        CudaAccel.DoneTraining();
+        //important to free memory from gpu
+        if(useCuda)
+            CudaAccel.DoneTraining();
         
-        Console.WriteLine("VALUE AFTER, " + string.Join(';', nn.hiddenLayers[1].Errors.Take(50)));
-
         return accuracys;
     }
 
@@ -116,12 +120,13 @@ public class NNModel
         nn.Load(ms);
     }
 
-    public (float percent, int count, int correct) Evaluate(float[][] x, float[][] y, bool output = true)
+    //only use cuda evaluation while training, because gpu memory gets freed after training
+    public (float percent, int count, int correct) Evaluate(float[][] x, float[][] y, bool useCuda, bool output = true)
     {
         int correct = 0;
         for (int i = 0; i < x.Length; i++)
         {
-            if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(nn.FeedForward(x[i])))
+            if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(nn.FeedForward(x[i], useCuda)))
             {
                 correct++;
             }

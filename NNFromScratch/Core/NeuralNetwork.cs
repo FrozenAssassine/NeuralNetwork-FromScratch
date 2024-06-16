@@ -27,10 +27,10 @@ internal class NeuralNetwork
         outputLayer.Initialize(hidden[hidden.Length > 1 ? hidden.Length - 1 : 0]);
     }
 
-    public void Train2(float[] inputs, float[] desiredOutputs, float learningRate)
+    private void Train_CPU(float[] inputs, float[] desiredOutputs, float learningRate)
     {
         // Perform feedforward pass to get the network's output
-        float[] res = FeedForward(inputs);
+        float[] res = FeedForward_CPU(inputs);
 
         // Calculate errors for the output layer
         Parallel.For(0, outputLayer.Size, (i) =>
@@ -79,7 +79,7 @@ internal class NeuralNetwork
             });
         }
     }
-    public float[] FeedForward(float[] data)
+    private float[] FeedForward_CPU(float[] data)
     {
         if (data.Length != inputLayer.Size)
             throw new Exception("Input size is not the same as the number of layers");
@@ -117,18 +117,26 @@ internal class NeuralNetwork
 
         return outputLayer.NeuronValues;
     }
-    public float[] FeedForward2(float[] data)
+    private float[] FeedForward_GPU(float[] data)
     {
         float[] prediction = new float[outputLayer.Size];
         CudaAccel.Predict(data, prediction, inputLayer.Size);
-
         return prediction;
     }
 
-    public void Train(float[] inputs, float[] desiredOutputs, float learningRate)
+    public float[] FeedForward(float[] data, bool useCuda)
     {
-        //CudaAccel.Test();
-        CudaAccel.Train(inputs, desiredOutputs, inputs.Length, learningRate);
+        if (useCuda)
+            return FeedForward_GPU(data);
+        return FeedForward_CPU(data);
+    }
+
+    public void Train(float[] inputs, float[] desiredOutputs, float learningRate, bool useCuda)
+    {
+        if (useCuda)
+            CudaAccel.Train(inputs, desiredOutputs, inputs.Length, learningRate);
+        else
+            Train_CPU(inputs, desiredOutputs, learningRate);
     }
 
     public void Save(Stream stream)

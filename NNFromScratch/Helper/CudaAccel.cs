@@ -19,9 +19,7 @@ internal static class CudaAccel
     public static extern void Predict(float[] data, float[] prediction, int n);
     
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
-    public static extern void Test();
-
-    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern void DoneTraining();
-
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool CheckCuda();
 }

@@ -26,15 +26,14 @@ public class Test_ODR
             new Layer(10, "Output"),
         });
 
-
         if (train)
         {
             //model.Load("D:\\odr1.cool");
-            model.Train(imageData.x, imageData.y, epochs: 3, learningRate: 0.1f);
+            model.Train(imageData.x, imageData.y, epochs: 3, learningRate: 0.1f, true, true);
 
             Console.WriteLine(BenchmarkExtension.Benchmark(() =>
             {
-                model.Evaluate(imageData.x, imageData.y);
+                model.Evaluate(imageData.x, imageData.y, false);
             }));
             model.Save("D:\\odr.cool");
         }
