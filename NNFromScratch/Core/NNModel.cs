@@ -1,9 +1,7 @@
-﻿namespace NNFromScratch.Core;
-
-using NNFromScratch.Helper;
+﻿using NNFromScratch.Helper;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
+
+namespace NNFromScratch.Core;
 
 public class NNModel
 {
@@ -73,18 +71,22 @@ public class NNModel
                 {
                     for (int i = 0; i < inputs.Length; i++)
                     {
-                        if (i % loggingInterval == 0)
+                        nn.Train(inputs[i], desired[i], learningRate, useCuda);
+
+                        if ((i+1) % loggingInterval == 0)
                         {
-                            averageStepTime += trainingTimeSW.ElapsedMilliseconds;
-                            Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + loggingInterval}/{inputs.Length}; ({trainingTimeSW.ElapsedMilliseconds}ms, {trainingTimeSW.ElapsedTicks}ticks)");
                             trainingTimeSW.Stop();
+
+                            averageStepTime += trainingTimeSW.ElapsedMilliseconds;
+                            Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1}/{inputs.Length}; ({trainingTimeSW.ElapsedMilliseconds}ms, {trainingTimeSW.ElapsedTicks}ticks)");
+                            
                             trainingTimeSW.Restart();
                         }
-                        nn.Train(inputs[i], desired[i], learningRate, useCuda);
                     }
                 }
+
                 Console.WriteLine(new string('-', 50));
-                Console.WriteLine($"Epoch {e} took {epochTime.ElapsedMilliseconds}ms; " + (averageStepTime > 0 ? $"avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step" : ""));
+                Console.WriteLine($"Epoch {e + 1} took {epochTime.ElapsedMilliseconds}ms; " + (averageStepTime > 0 ? $"avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step" : ""));
 
                 //evaluate after every epoch
                 if (evaluate)
@@ -98,11 +100,13 @@ public class NNModel
                     Console.WriteLine(new string('-', 50));
             }
         });
-
         //important to free memory from gpu
-        if(useCuda)
+        if (useCuda)
             CudaAccel.DoneTraining();
-        
+
+        Console.WriteLine(new string('=', 50) + "\n");
+        Console.WriteLine($"Training took: {trainingTime}\n");
+
         return accuracys;
     }
 
@@ -127,9 +131,7 @@ public class NNModel
         for (int i = 0; i < x.Length; i++)
         {
             if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(nn.FeedForward(x[i], useCuda)))
-            {
                 correct++;
-            }
         }
 
         float accuracy = (float)correct / x.Length;
@@ -143,5 +145,4 @@ public class NNModel
     {
         nn.Summary();
     }
-
 }

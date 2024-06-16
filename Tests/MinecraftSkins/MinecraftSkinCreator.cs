@@ -26,7 +26,7 @@ internal class MinecraftSkinCreator
             new Layer(512),
             new Layer(imageWidth * imageHeight * 4),
         });
-        model.Train(x, images, 5, 0.1f);
+        model.Train(x, images, 5, 0.1f, true);
         model.Save("D:\\mctest.cool");
 
         //model.Load("D:\\mctest.cool");

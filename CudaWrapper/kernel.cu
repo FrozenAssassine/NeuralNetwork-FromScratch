@@ -9,7 +9,7 @@
 
 //#define DEBUG
 
-int threadsPerBlock = 256;
+int threadsPerBlock = 1024;
 
 typedef struct Layer {
     float* Biases;
@@ -156,7 +156,8 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desiredOutputs
     CUDA_CHECK(err, "3");
 
     if (desiredValues == nullptr) {
-        cudaMalloc(&desiredValues, cpuLayers[allLayersCount - 1].Size * sizeof(float));
+        err = cudaMalloc(&desiredValues, cpuLayers[allLayersCount - 1].Size * sizeof(float));
+        CUDA_CHECK(err, "50");
     }
     err = cudaMemcpy(desiredValues, desiredOutputs, cpuLayers[allLayersCount - 1].Size * sizeof(float), cudaMemcpyHostToDevice);
     CUDA_CHECK(err, "4");
