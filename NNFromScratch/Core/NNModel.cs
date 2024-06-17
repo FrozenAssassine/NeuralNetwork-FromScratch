@@ -1,4 +1,6 @@
-﻿using NNFromScratch.Helper;
+﻿using NNFromScratch.Core.Layer;
+using NNFromScratch.Core.Layers;
+using NNFromScratch.Helper;
 using System.Diagnostics;
 
 namespace NNFromScratch.Core;
@@ -7,7 +9,7 @@ public class NNModel
 {
     private NeuralNetwork nn;
 
-    public NNModel(Layer[] layers, bool useCuda = true)
+    public NNModel(NeuronLayer[] layers, bool useCuda = true)
     {
         if (layers.Length < 3)
         {
@@ -52,7 +54,6 @@ public class NNModel
 
         if (output)
             Console.WriteLine("Prediction time " + time);
-
         return prediction;
     }
 

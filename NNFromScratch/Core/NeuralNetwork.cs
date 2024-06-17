@@ -1,15 +1,16 @@
-﻿using NNFromScratch.Helper;
+﻿using NNFromScratch.Core.Layers;
+using NNFromScratch.Helper;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace NNFromScratch.Core;
 
 internal class NeuralNetwork
 {
-    public readonly Layer inputLayer;
-    public readonly Layer[] hiddenLayers;
-    public readonly Layer outputLayer;
+    public readonly NeuronLayer inputLayer;
+    public readonly NeuronLayer[] hiddenLayers;
+    public readonly NeuronLayer outputLayer;
 
-    public NeuralNetwork(Layer inputs, Layer[] hidden, Layer outputs)
+    public NeuralNetwork(NeuronLayer inputs, NeuronLayer[] hidden, NeuronLayer outputs)
     {
         this.inputLayer = inputs;
         this.hiddenLayers = hidden;

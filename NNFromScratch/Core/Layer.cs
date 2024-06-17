@@ -1,4 +1,5 @@
-﻿using NNFromScratch.Helper;
+﻿using NNFromScratch.Core.ActivationFunctions;
+using NNFromScratch.Helper;
 
 namespace NNFromScratch.Core;
 public class Layer
@@ -11,7 +12,7 @@ public class Layer
     public Layer PreviousLayer;
     public Layer NextLayer;
     public string Name;
-
+    public IActivationFunction activationFunction;
     public Layer(int size, string name = "")
     {
         this.Size = size;
