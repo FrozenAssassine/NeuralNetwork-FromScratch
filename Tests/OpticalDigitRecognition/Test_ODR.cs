@@ -12,8 +12,8 @@ public class Test_ODR
     {
         bool train = true;        
 
-        var imageData = MNistLoader.LoadFromFile(".\\datasets\\train-images.idx3-ubyte", ".\\datasets\\train-labels.idx1-ubyte");
-        //var imageData = MNistLoader.LoadFromFile(".\\datasets\\t10k-images.idx3-ubyte", ".\\datasets\\t10k-labels.idx1-ubyte");
+        //var imageData = MNistLoader.LoadFromFile(".\\datasets\\train-images.idx3-ubyte", ".\\datasets\\train-labels.idx1-ubyte");
+        var imageData = MNistLoader.LoadFromFile(".\\datasets\\t10k-images.idx3-ubyte", ".\\datasets\\t10k-labels.idx1-ubyte");
         int[] digits = new int[imageData.y.Length];
         int imageWidth = imageData.imageWidth;
         int imageHeight = imageData.imageHeight;
@@ -30,7 +30,7 @@ public class Test_ODR
         if (train)
         {
             //model.Load("D:\\odr1.cool");
-            model.Train(imageData.x, imageData.y, epochs: 10, learningRate: 0.1f, true, true);
+            model.Train(imageData.x, imageData.y, epochs: 10, learningRate: 0.1f, false, true);
 
             Console.WriteLine(BenchmarkExtension.Benchmark(() =>
             {

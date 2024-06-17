@@ -7,15 +7,27 @@ public class NNModel
 {
     private NeuralNetwork nn;
 
-    public NNModel(Layer[] layers)
+    public NNModel(Layer[] layers, bool useCuda = true)
     {
         if (layers.Length < 3)
         {
             throw new Exception("You need at least one input, hidden and output layer");
         }
 
+        //initialize the neural network
         var hidden = layers.Length == 1 ? layers.Skip(1) : layers.Skip(1).Take(layers.Length - 2);
         nn = new NeuralNetwork(layers[0], hidden.ToArray(), layers[layers.Length - 1]);
+
+        //use cuda only if available:
+        bool hasCuda = CudaAccel.CheckCuda();
+        if(useCuda && !hasCuda)
+            Console.WriteLine("CUDA is not availabe");
+
+        useCuda = useCuda ? hasCuda : false;
+        if (!useCuda){
+            Console.WriteLine("Use CPU Compute Device");
+            return;
+        }
 
         //initialize the cuda accelerator and pass the total number of layers:
         CudaAccel.Init(layers.Length);
@@ -25,7 +37,8 @@ public class NNModel
         foreach (var layer in layers)
         {
             int prevSize = layerIndex > 0 ? layers[layerIndex - 1].Size : 0;
-            CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors);
+
+                CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors);
         }
     }
 
@@ -62,26 +75,24 @@ public class NNModel
         var trainingTime = BenchmarkExtension.Benchmark(() =>
         {
             Stopwatch epochTime = new Stopwatch();
+            Stopwatch stepTimeSW = new Stopwatch();
             for (int e = 0; e < epochs; e++)
             {
                 float averageStepTime = 0;
                 epochTime.Restart();
-                Stopwatch trainingTimeSW = new Stopwatch();
-                trainingTimeSW.Start();
+                stepTimeSW.Start();
+
+                for (int i = 0; i < inputs.Length; i++)
                 {
-                    for (int i = 0; i < inputs.Length; i++)
+                    nn.Train(inputs[i], desired[i], learningRate, useCuda);
+                    if ((i + 1) % loggingInterval == 0)
                     {
-                        nn.Train(inputs[i], desired[i], learningRate, useCuda);
+                        stepTimeSW.Stop();
 
-                        if ((i+1) % loggingInterval == 0)
-                        {
-                            trainingTimeSW.Stop();
+                        averageStepTime += stepTimeSW.ElapsedMilliseconds;
+                        Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1}/{inputs.Length}; ({stepTimeSW.ElapsedMilliseconds}ms, {stepTimeSW.ElapsedTicks}ticks)");
 
-                            averageStepTime += trainingTimeSW.ElapsedMilliseconds;
-                            Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1}/{inputs.Length}; ({trainingTimeSW.ElapsedMilliseconds}ms, {trainingTimeSW.ElapsedTicks}ticks)");
-                            
-                            trainingTimeSW.Restart();
-                        }
+                        stepTimeSW.Restart();
                     }
                 }
 
@@ -123,7 +134,7 @@ public class NNModel
         var ms = new MemoryStream(bytes);
         nn.Load(ms);
     }
-
+    
     //only use cuda evaluation while training, because gpu memory gets freed after training
     public (float percent, int count, int correct) Evaluate(float[][] x, float[][] y, bool useCuda, bool output = true)
     {
