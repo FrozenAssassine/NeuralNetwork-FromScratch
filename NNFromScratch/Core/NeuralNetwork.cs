@@ -6,11 +6,11 @@ namespace NNFromScratch.Core;
 
 internal class NeuralNetwork
 {
-    public readonly NeuronLayer inputLayer;
+    public readonly InputLayer inputLayer;
     public readonly NeuronLayer[] hiddenLayers;
-    public readonly NeuronLayer outputLayer;
+    public readonly OutputLayer outputLayer;
 
-    public NeuralNetwork(NeuronLayer inputs, NeuronLayer[] hidden, NeuronLayer outputs)
+    public NeuralNetwork(InputLayer inputs, NeuronLayer[] hidden, OutputLayer outputs)
     {
         this.inputLayer = inputs;
         this.hiddenLayers = hidden;
@@ -54,9 +54,9 @@ internal class NeuralNetwork
         for (int h = hiddenLayers.Length - 1; h >= 0; h--)
         {
             //int h = hiddenLayers.Length - 1 - index;
-            Layer currentLayer = hiddenLayers[h];
-            Layer nextLayer = (h == hiddenLayers.Length - 1) ? outputLayer : hiddenLayers[h + 1];
-            Layer previousLayer = (h == 0) ? inputLayer : hiddenLayers[h - 1];
+            NeuronLayer currentLayer = hiddenLayers[h];
+            NeuronLayer nextLayer = (h == hiddenLayers.Length - 1) ? outputLayer : hiddenLayers[h + 1];
+            NeuronLayer previousLayer = (h == 0) ? inputLayer : hiddenLayers[h - 1];
 
             float error = 0.0f;
             
@@ -142,8 +142,7 @@ internal class NeuralNetwork
 
     public void Save(Stream stream)
     {
-        //todo:
-        var layer = new List<Layer>();
+        var layer = new List<NeuronLayer>();
         layer.AddRange(hiddenLayers);
         layer.Add(outputLayer);
 
@@ -157,8 +156,7 @@ internal class NeuralNetwork
 
     public void Load(Stream stream)
     {
-        //todo:
-        var layer = new List<Layer>();
+        var layer = new List<NeuronLayer>();
         layer.AddRange(hiddenLayers);
         layer.Add(outputLayer);
 

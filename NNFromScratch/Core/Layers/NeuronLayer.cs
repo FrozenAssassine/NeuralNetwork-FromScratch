@@ -1,6 +1,5 @@
 ﻿using NNFromScratch.Core.ActivationFunctions;
 using NNFromScratch.Helper;
-using System.Xml.Linq;
 
 namespace NNFromScratch.Core.Layers
 {
@@ -12,8 +11,13 @@ namespace NNFromScratch.Core.Layers
         public float[] Weights;
         public int Size;
         public NeuronLayer PreviousLayer;
-        public NeuronLayer NextLayer;
         public IActivationFunction ActivationFunction;
+
+        public NeuronLayer(int size, IActivationFunction activation)
+        {
+            this.Size = size;
+            this.ActivationFunction = activation;
+        }
 
         public void Initialize(NeuronLayer previousLayer)
         {
@@ -45,7 +49,7 @@ namespace NNFromScratch.Core.Layers
             }
         }
 
-        public virtual void Train()
+        public virtual void Train(float[] desired)
         {
             for (int i = 0; i < this.Size; i++)
             {

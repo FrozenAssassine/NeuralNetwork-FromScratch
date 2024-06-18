@@ -1,5 +1,4 @@
-﻿using NNFromScratch.Core.Layer;
-using NNFromScratch.Core.Layers;
+﻿using NNFromScratch.Core.Layers;
 using NNFromScratch.Helper;
 using System.Diagnostics;
 
@@ -18,7 +17,13 @@ public class NNModel
 
         //initialize the neural network
         var hidden = layers.Length == 1 ? layers.Skip(1) : layers.Skip(1).Take(layers.Length - 2);
-        nn = new NeuralNetwork(layers[0], hidden.ToArray(), layers[layers.Length - 1]);
+        if (layers[0] is InputLayer inputLayer && layers[layers.Length - 1] is OutputLayer outputLayer)
+        {
+            nn = new NeuralNetwork(inputLayer, hidden.ToArray(), outputLayer);
+        }
+        else
+            throw new Exception("Input or output layer are not an instance of type 'InputLayer' or 'OutputLayer'");
+
 
         //use cuda only if available:
         bool hasCuda = CudaAccel.CheckCuda();
@@ -39,8 +44,7 @@ public class NNModel
         foreach (var layer in layers)
         {
             int prevSize = layerIndex > 0 ? layers[layerIndex - 1].Size : 0;
-
-                CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors);
+            CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors);
         }
     }
 
@@ -57,7 +61,7 @@ public class NNModel
         return prediction;
     }
 
-    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, bool useCuda = true, bool evaluate = false, int evaluatePercent = 10)
+    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, bool useCuda = true, int loggingInterval = 100, bool evaluate = false, int evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
@@ -67,8 +71,6 @@ public class NNModel
         {
             useCuda = CudaAccel.CheckCuda();
         }
-
-        int loggingInterval = 1000;
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];
@@ -124,18 +126,22 @@ public class NNModel
 
     public void Save(string path)
     {
+        Console.WriteLine("Saving model data to file");
         var ms = new MemoryStream();
         nn.Save(ms);
         File.WriteAllBytes(path, ms.ToArray());
+        Console.WriteLine($"Saved to {path}");
     }
 
     public void Load(string path)
     {
+        Console.WriteLine("Loading model data from file");
         var bytes = File.ReadAllBytes(path);
         var ms = new MemoryStream(bytes);
         nn.Load(ms);
+        Console.WriteLine($"Loaded from {path}");
     }
-    
+
     //only use cuda evaluation while training, because gpu memory gets freed after training
     public (float percent, int count, int correct) Evaluate(float[][] x, float[][] y, bool useCuda, bool output = true)
     {

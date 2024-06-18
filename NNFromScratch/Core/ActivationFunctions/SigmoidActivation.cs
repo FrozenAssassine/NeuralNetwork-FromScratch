@@ -1,6 +1,6 @@
 ﻿namespace NNFromScratch.Core.ActivationFunctions;
 
-internal class SigmoidActivation : IActivationFunction
+public class SigmoidActivation : IActivationFunction
 {
     public float Calculate(float x)
     {

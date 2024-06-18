@@ -26,13 +26,13 @@ public class Test_ODR
             .Stack(new InputLayer(imageWidth * imageHeight, activation))
             .Stack(new NeuronLayer(128, activation))
             .Stack(new NeuronLayer(64, activation))
-            .Stack(new NeuronLayer(10, activation))
+            .Stack(new OutputLayer(10, activation))
             .Build();
 
         if (train)
         {
             //network.Load("D:\\odr1.cool");
-            network.Train(imageData.x, imageData.y, epochs: 10, learningRate: 0.1f, false, true);
+            network.Train(imageData.x, imageData.y, epochs: 10, learningRate: 0.1f, true, 1000, true);
 
             Console.WriteLine(BenchmarkExtension.Benchmark(() =>
             {

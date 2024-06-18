@@ -3,10 +3,10 @@ using NNFromScratch.Core.Layers;
 
 namespace NNFromScratch.Core
 {
-    internal class NetworkBuilder
+    public class NetworkBuilder
     {
         private List<NeuronLayer> layers = new();
-        public NetworkBuilder Create()
+        public static NetworkBuilder Create()
         {
             return new NetworkBuilder();
         }
