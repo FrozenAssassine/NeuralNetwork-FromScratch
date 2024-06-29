@@ -124,6 +124,37 @@ public class NNModel
         return accuracys;
     }
 
+    public void TrainAllFlattened(float[] inputs, float[] desired, int totalItems, int inputsLength, int desiredLength, int epochs, float learningRate = 0.1f)
+    {
+        //let cuda check for available devices:
+        if (!CudaAccel.CheckCuda())
+            return;
+
+        Console.WriteLine(new string('-', 50) + "\n");
+
+        var trainingTime = BenchmarkExtension.Benchmark(() =>
+        {
+            Stopwatch epochTime = new Stopwatch();
+            for (int e = 0; e < epochs; e++)
+            {
+                epochTime.Restart();
+
+                Console.WriteLine("Start epoch");
+
+                CudaAccel.TrainAll(inputs, desired, totalItems, inputsLength, desiredLength, learningRate);
+
+                Console.WriteLine(new string('-', 50));
+                Console.WriteLine($"Epoch {e + 1} took {epochTime.ElapsedMilliseconds}ms; ");
+
+                if (e != epochs - 1)
+                    Console.WriteLine(new string('-', 50));
+            }
+        });
+
+        //important to free memory from gpu
+        CudaAccel.DoneTraining();
+    }
+
     public void Save(string path)
     {
         Console.WriteLine("Saving model data to file");

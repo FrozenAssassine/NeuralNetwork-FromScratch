@@ -2,7 +2,6 @@
 using NNFromScratch.Core.ActivationFunctions;
 using NNFromScratch.Core.Layers;
 using NNFromScratch.Helper;
-using System.Net.Http.Headers;
 
 namespace Tests.SceneClassification
 {
@@ -37,14 +36,19 @@ namespace Tests.SceneClassification
             var activation = new SigmoidActivation();
             var network = NetworkBuilder.Create()
                 .Stack(new InputLayer(ImageWidth * ImageHeight * PixelDepth, activation))
-                .Stack(new NeuronLayer(2048, activation))
-                .Stack(new NeuronLayer(2048, activation))
+                .Stack(new NeuronLayer(1024, activation))
+                .Stack(new NeuronLayer(512, activation))
                 .Stack(new OutputLayer(OutputTypes, activation))
-                .Build();
+                .Build(false);
 
             //network.Load("D:\\imageclassification_cpu.cool");
 
-            network.Train(images, desired, 3, 0.1f, true, 100);
+            float[] X_flattened = images.SelectMany(innerArray => innerArray).ToArray();
+            float[] y_flattened = desired.SelectMany(innerArray => innerArray).ToArray();
+
+
+            //network.TrainAllFlattened(X_flattened, y_flattened, ImageCount, images[0].Length, desired[0].Length, 3,0.1f);
+            network.Train(images, desired, 3,0.1f, false);
             Console.WriteLine("Press enter to Save");
             Console.ReadLine();
 

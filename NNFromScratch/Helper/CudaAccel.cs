@@ -23,4 +23,7 @@ internal static class CudaAccel
     public static extern void DoneTraining();
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern bool CheckCuda();
+
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void TrainAll(float[] inputs, float[] desiredOutputs, int totalItems, int inputsLength, int desiredLength, float learningRate);
 }

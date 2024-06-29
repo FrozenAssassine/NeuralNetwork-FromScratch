@@ -49,24 +49,6 @@ namespace NNFromScratch.Core.Layers
             }
         }
 
-        public virtual void Train(float[] desired)
-        {
-            for (int i = 0; i < this.Size; i++)
-            {
-                float sum = 0.0f;
-                for (int j = 0; j < this.PreviousLayer.Size; j++)
-                {
-                    sum += this.PreviousLayer.NeuronValues[j] * this.Weights[i * this.PreviousLayer.Size + j];
-                }
-                this.NeuronValues[i] = MathHelper.Sigmoid(sum + this.Biases[i]);
-            }
-        }
-
-        public virtual void FeedForward(float[] inputs)
-        {
-
-        }
-
         public virtual void Save(BinaryWriter bw)
         {
             if (Weights == null)

@@ -22,7 +22,10 @@ typedef struct Layer {
 Layer* gpuLayers;
 Layer* cpuLayers;
 
-float* desiredValues;
+//float* desiredValues;
+
+float* all_inputs;
+float* all_desired;
 
 int allLayersCount;
 
@@ -107,14 +110,21 @@ __global__ void ff_outputValues(Layer output, Layer prev, int size) {
     }
 }
 
+__global__ void copyInputsToFirstLayer(float* inputs, float* neuronValues, int size) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size) {
+        neuronValues[i] = inputs[i];
+    }
+}
+
 float* FeedForward(float* data, int n, bool allocate = true) {
     cudaError_t err;
 
     //set this to true, if the data is not already on the gpu from the train function
-    if (allocate) {
-        err = cudaMemcpy(gpuLayers[0].NeuronValues, data, n * sizeof(float), cudaMemcpyHostToDevice);
-        CUDA_CHECK(err, "0");
-    }
+   // if (allocate) {
+        //err = cudaMemcpy(gpuLayers[0].NeuronValues, data, n * sizeof(float), cudaMemcpyHostToDevice);
+     //   CUDA_CHECK(err, "0");
+    //}
 
     //calculate neuron values for hidden layer:
     for (int i = 1; i < allLayersCount - 1; i++) {
@@ -158,6 +168,10 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desiredOutputs
     Layer& outputLayer = gpuLayers[allLayersCount - 1];
     Layer& prevLayer = gpuLayers[allLayersCount - 2];
 
+    int numBlocks = (gpuLayers[0].Size + threadsPerBlock - 1) / threadsPerBlock;
+    copyInputsToFirstLayer << <numBlocks, threadsPerBlock >> > (inputs, gpuLayers[0].NeuronValues, gpuLayers[0].Size);
+
+    /*
     //copy the new inputs and outputs to the gpu
     err = cudaMemcpy(gpuLayers[0].NeuronValues, inputs, cpuLayers[0].Size * sizeof(float), cudaMemcpyHostToDevice);
     CUDA_CHECK(err, "3");
@@ -168,6 +182,7 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desiredOutputs
     }
     err = cudaMemcpy(desiredValues, desiredOutputs, cpuLayers[allLayersCount - 1].Size * sizeof(float), cudaMemcpyHostToDevice);
     CUDA_CHECK(err, "4");
+    */
 
     // Perform feedforward pass to get the network's output
     FeedForward(gpuLayers[0].NeuronValues, size, false);
@@ -176,10 +191,10 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desiredOutputs
     int outputBlocks = (outputLayer.Size + threadsPerBlock - 1) / threadsPerBlock;
     output_Errors << <outputBlocks, threadsPerBlock >> > (
         gpuLayers[allLayersCount - 1],
-        desiredValues,
+        desiredOutputs,
         outputLayer.Size
         );
-
+        
     // Update weights and biases for the output layer
     output_WeightsBiases << <outputBlocks, threadsPerBlock >> > (
         gpuLayers[allLayersCount - 1],
@@ -209,6 +224,26 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desiredOutputs
     CUDA_CHECK(err, "7");
 }
 
+extern "C" __declspec(dllexport) void TrainAll(float* inputs, float* desiredOutputs, int totalItems, int inputsLength, int desiredLength, float learningRate)
+{
+    //allocate the memory on the gpu
+    cudaMalloc(&all_desired, totalItems * desiredLength * sizeof(float));
+    cudaMalloc(&all_inputs, totalItems * inputsLength * sizeof(float));
+
+    //copy the data to the allocated memory
+    cudaMemcpy(all_desired, desiredOutputs, totalItems * desiredLength * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(all_inputs, inputs, totalItems * inputsLength * sizeof(float), cudaMemcpyHostToDevice);
+
+    for (int item = 0; item < totalItems; ++item) {
+        float* input = &all_inputs[item * inputsLength];
+        float* desiredOutput = &all_desired[item * desiredLength];
+
+        for (int i = 0; i < totalItems; ++i) {
+            Train(input, desiredOutput, totalItems, learningRate);
+        }
+    }
+}
+
 extern "C" __declspec(dllexport) void Cleanup() {
     //free the memory of every layer from the gpu
     for (int i = 0; i < allLayersCount; i++) {
@@ -217,7 +252,11 @@ extern "C" __declspec(dllexport) void Cleanup() {
         cudaFree(gpuLayers[i].Errors);
         cudaFree(gpuLayers[i].Weights);
     }
-    cudaFree(desiredValues);
+    cudaFree(all_desired);
+    cudaFree(all_inputs);
+
+
+    //cudaFree(desiredValues);
     delete[] gpuLayers;
 }
 
@@ -228,7 +267,7 @@ extern "C" __declspec(dllexport) void DoneTraining() {
     for (int i = 0; i < allLayersCount; i++) {
         Layer& gpuLayer = gpuLayers[i];
         Layer& cpuLayer = cpuLayers[i];
-
+        
         //copy back all layers:
         err = cudaMemcpy(cpuLayer.Biases, gpuLayer.Biases, gpuLayer.Size * sizeof(float), cudaMemcpyDeviceToHost);
         CUDA_CHECK(err, "10");
