@@ -28,7 +28,7 @@ At the current point I would not recommend this in any production environment, f
 | Training Details | GPU (CUDA, RTX 3050) | CPU (i9-10900) | (CPU) Ryzen 5 3500U |
 |------------------|----------------------|----------------|----------------|
 | 100 images, 150x150x3 (67500 inputs, 1024 hidden, 512 hidden, 256 hidden, 6 outputs) | 6.472 sec | 9.514 sec | 34.472 sec
-| 100 images, 150x150x3 (67500 inputs, 2048 hidden, 1024 hidden, 6 outputs) | 6.832 sec | 19.765 sec | 31.467 sec
+| 100 images, 150x150x3 (67500 inputs, 2048 hidden, 1024 hidden, 6 outputs) | 6.832 sec | 9.426 sec | 31.467 sec
 
   
 ## 🚀 Get Started
