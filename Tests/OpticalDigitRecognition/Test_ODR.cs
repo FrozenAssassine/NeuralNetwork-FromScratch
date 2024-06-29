@@ -3,6 +3,8 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
 using NNFromScratch.Helper;
 using NNFromScratch;
+using NNFromScratch.Core.Layers;
+using NNFromScratch.Core.ActivationFunctions;
 
 namespace Tests.TestODR;
 
@@ -12,36 +14,36 @@ public class Test_ODR
     {
         bool train = true;        
 
+        //var imageData = MNistLoader.LoadFromFile(".\\datasets\\train-images.idx3-ubyte", ".\\datasets\\train-labels.idx1-ubyte");
         var imageData = MNistLoader.LoadFromFile(".\\datasets\\t10k-images.idx3-ubyte", ".\\datasets\\t10k-labels.idx1-ubyte");
         int[] digits = new int[imageData.y.Length];
         int imageWidth = imageData.imageWidth;
         int imageHeight = imageData.imageHeight;
 
-        //create the model:
-        NNModel model = new NNModel(new Layer[]
-        {
-            new Layer(imageWidth * imageHeight, "Input"),
-            new Layer(128, "Hidden1"),
-            new Layer(64, "Hidden2"),
-            new Layer(10, "Output"),
-        });
+        //create the neural network:
+        var activation = new SigmoidActivation();
+        var network = NetworkBuilder.Create()
+            .Stack(new InputLayer(imageWidth * imageHeight, activation))
+            .Stack(new NeuronLayer(128, activation))
+            .Stack(new NeuronLayer(64, activation))
+            .Stack(new OutputLayer(10, activation))
+            .Build();
 
         if (train)
         {
-            //model.Load("D:\\odr1.cool");
-            model.Train(imageData.x, imageData.y, epochs: 3, learningRate: 0.1f, true, true);
+            //network.Load("D:\\odr1.cool");
+            network.Train(imageData.x, imageData.y, epochs: 10, learningRate: 0.1f, true, 1000, true);
 
             Console.WriteLine(BenchmarkExtension.Benchmark(() =>
             {
-                model.Evaluate(imageData.x, imageData.y, false);
+                network.Evaluate(imageData.x, imageData.y, false);
             }));
-            model.Save("D:\\odr.cool");
+            network.Save("D:\\odr.cool");
         }
-
 
         if (!train)
         {
-            //model.Load("D:\\odr.cool");
+            //network.Load("D:\\odr.cool");
         }
     }
 

@@ -1,15 +1,15 @@
-﻿using NNFromScratch.Helper;
-using static System.Net.Mime.MediaTypeNames;
+﻿using NNFromScratch.Core.Layers;
+using NNFromScratch.Helper;
 
 namespace NNFromScratch.Core;
 
 internal class NeuralNetwork
 {
-    public readonly Layer inputLayer;
-    public readonly Layer[] hiddenLayers;
-    public readonly Layer outputLayer;
+    public readonly InputLayer inputLayer;
+    public readonly NeuronLayer[] hiddenLayers;
+    public readonly OutputLayer outputLayer;
 
-    public NeuralNetwork(Layer inputs, Layer[] hidden, Layer outputs)
+    public NeuralNetwork(InputLayer inputs, NeuronLayer[] hidden, OutputLayer outputs)
     {
         this.inputLayer = inputs;
         this.hiddenLayers = hidden;
@@ -53,9 +53,9 @@ internal class NeuralNetwork
         for (int h = hiddenLayers.Length - 1; h >= 0; h--)
         {
             //int h = hiddenLayers.Length - 1 - index;
-            Layer currentLayer = hiddenLayers[h];
-            Layer nextLayer = (h == hiddenLayers.Length - 1) ? outputLayer : hiddenLayers[h + 1];
-            Layer previousLayer = (h == 0) ? inputLayer : hiddenLayers[h - 1];
+            NeuronLayer currentLayer = hiddenLayers[h];
+            NeuronLayer nextLayer = (h == hiddenLayers.Length - 1) ? outputLayer : hiddenLayers[h + 1];
+            NeuronLayer previousLayer = (h == 0) ? inputLayer : hiddenLayers[h - 1];
 
             float error = 0.0f;
             
@@ -117,17 +117,8 @@ internal class NeuralNetwork
 
         return outputLayer.NeuronValues;
     }
-    private float[] FeedForward_GPU(float[] data)
+    public float[] FeedForward(float[] data)
     {
-        float[] prediction = new float[outputLayer.Size];
-        CudaAccel.Predict(data, prediction, inputLayer.Size);
-        return prediction;
-    }
-
-    public float[] FeedForward(float[] data, bool useCuda)
-    {
-        if (useCuda)
-            return FeedForward_GPU(data);
         return FeedForward_CPU(data);
     }
 
@@ -141,8 +132,7 @@ internal class NeuralNetwork
 
     public void Save(Stream stream)
     {
-        //todo:
-        var layer = new List<Layer>();
+        var layer = new List<NeuronLayer>();
         layer.AddRange(hiddenLayers);
         layer.Add(outputLayer);
 
@@ -156,8 +146,7 @@ internal class NeuralNetwork
 
     public void Load(Stream stream)
     {
-        //todo:
-        var layer = new List<Layer>();
+        var layer = new List<NeuronLayer>();
         layer.AddRange(hiddenLayers);
         layer.Add(outputLayer);
 

@@ -1,7 +1,8 @@
 ﻿using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
-using System.Linq;
 using NNFromScratch.Core;
+using NNFromScratch.Core.Layers;
+using NNFromScratch.Core.ActivationFunctions;
 
 namespace Tests.MCSkinCreator;
 
@@ -19,14 +20,15 @@ internal class MinecraftSkinCreator
             x[i] = new float[] { i / 5000.0f };
         }
 
-        NNModel model = new NNModel(new Layer[]
-        {
-            new Layer(1),
-            new Layer(512),
-            new Layer(512),
-            new Layer(imageWidth * imageHeight * 4),
-        });
-        model.Train(x, images, 5, 0.1f);
+        var activation = new SigmoidActivation();
+        var model= NetworkBuilder.Create()
+            .Stack(new InputLayer(1, activation))
+            .Stack(new NeuronLayer(512, activation))
+            .Stack(new NeuronLayer(512, activation))
+            .Stack(new OutputLayer(imageWidth * imageHeight * 4, activation))
+            .Build();
+
+        model.Train(x, images, 5, 0.1f, true);
         model.Save("D:\\mctest.cool");
 
         //model.Load("D:\\mctest.cool");
