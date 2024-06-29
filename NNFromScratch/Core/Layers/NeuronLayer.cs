@@ -1,5 +1,4 @@
-﻿using NNFromScratch.Core.ActivationFunctions;
-using NNFromScratch.Helper;
+﻿using NNFromScratch.Helper;
 
 namespace NNFromScratch.Core.Layers
 {
@@ -11,9 +10,9 @@ namespace NNFromScratch.Core.Layers
         public float[] Weights;
         public int Size;
         public NeuronLayer PreviousLayer;
-        public IActivationFunction ActivationFunction;
+        public ActivationType ActivationFunction;
 
-        public NeuronLayer(int size, IActivationFunction activation)
+        public NeuronLayer(int size, ActivationType activation)
         {
             this.Size = size;
             this.ActivationFunction = activation;
