@@ -33,5 +33,6 @@ At the current point I would not recommend this in any production environment, f
 ## 🚀 Get Started
 1. Clone the repository.
 2. Ensure you have the necessary dependencies for C# and CUDA development.
-3. Open the solution file (`.sln`) in Visual Studio.
-4. Build and run the project.
+   (https://developer.nvidia.com/cuda-downloads)
+4. Open the solution file (`.sln`) in Visual Studio.
+5. Build and run the project.
