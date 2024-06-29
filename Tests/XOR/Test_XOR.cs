@@ -1,5 +1,4 @@
 ﻿using NNFromScratch.Core;
-using NNFromScratch.Core.ActivationFunctions;
 using NNFromScratch.Core.Layers;
 
 namespace Tests.XOR;
@@ -8,11 +7,10 @@ internal class Test_XOR
 {
     public static void Run()
     {
-        var activationFunction = new SigmoidActivation();
         var nnmodel = NetworkBuilder.Create()
-            .Stack(new InputLayer(2, activationFunction))
-            .Stack(new NeuronLayer(4, activationFunction))
-            .Stack(new OutputLayer(2, activationFunction))
+            .Stack(new InputLayer(2))
+            .Stack(new NeuronLayer(4, ActivationType.Sigmoid))
+            .Stack(new OutputLayer(2, ActivationType.Sigmoid))
             .Build();
 
         nnmodel.Summary();

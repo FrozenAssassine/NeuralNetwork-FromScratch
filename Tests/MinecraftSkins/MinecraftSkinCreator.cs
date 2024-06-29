@@ -2,7 +2,6 @@
 using SixLabors.ImageSharp;
 using NNFromScratch.Core;
 using NNFromScratch.Core.Layers;
-using NNFromScratch.Core.ActivationFunctions;
 
 namespace Tests.MCSkinCreator;
 
@@ -20,15 +19,14 @@ internal class MinecraftSkinCreator
             x[i] = new float[] { i / 5000.0f };
         }
 
-        var activation = new SigmoidActivation();
         var model= NetworkBuilder.Create()
-            .Stack(new InputLayer(1, activation))
-            .Stack(new NeuronLayer(512, activation))
-            .Stack(new NeuronLayer(512, activation))
-            .Stack(new OutputLayer(imageWidth * imageHeight * 4, activation))
+            .Stack(new InputLayer(1))
+            .Stack(new NeuronLayer(512, ActivationType.Sigmoid))
+            .Stack(new NeuronLayer(512, ActivationType.Sigmoid))
+            .Stack(new OutputLayer(imageWidth * imageHeight * 4, ActivationType.Sigmoid))
             .Build();
 
-        model.Train(x, images, 5, 0.1f, true);
+        model.Train(x, images, 5, 0.1f);
         model.Save("D:\\mctest.cool");
 
         //model.Load("D:\\mctest.cool");

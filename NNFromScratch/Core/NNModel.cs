@@ -7,9 +7,13 @@ namespace NNFromScratch.Core;
 public class NNModel
 {
     private NeuralNetwork nn;
-
+    private bool useCuda = false;
+    private bool cudaLayersInitialized;
+    private NeuronLayer[] layers;
     public NNModel(NeuronLayer[] layers, bool useCuda = true)
     {
+        this.layers = layers;
+
         if (layers.Length < 3)
         {
             throw new Exception("You need at least one input, hidden and output layer");
@@ -30,7 +34,7 @@ public class NNModel
         if(useCuda && !hasCuda)
             Console.WriteLine("CUDA is not availabe");
 
-        useCuda = useCuda ? hasCuda : false;
+        this.useCuda = useCuda = useCuda ? hasCuda : false;
         if (!useCuda){
             Console.WriteLine("Use CPU Compute Device");
             return;
@@ -38,13 +42,21 @@ public class NNModel
 
         //initialize the cuda accelerator and pass the total number of layers:
         CudaAccel.Init(layers.Length);
+    }
+
+    private void InitCuda()
+    {
+        if (cudaLayersInitialized)
+            return;
+
+        cudaLayersInitialized = true;
 
         //pass the references for all c# arrays to the c++ code:
         int layerIndex = 0;
         foreach (var layer in layers)
         {
             int prevSize = layerIndex > 0 ? layers[layerIndex - 1].Size : 0;
-            CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors);
+            CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors, layer.ActivationFunction);
         }
     }
 
@@ -61,7 +73,7 @@ public class NNModel
         return prediction;
     }
 
-    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, bool useCuda = true, int loggingInterval = 100, bool evaluate = false, int evaluatePercent = 10)
+    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, int loggingInterval = 100, bool evaluate = false, int evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.inputLayer.Size)
             throw new Exception("Input size does not match input layer count");
@@ -71,6 +83,9 @@ public class NNModel
         {
             useCuda = CudaAccel.CheckCuda();
         }
+        
+        if(useCuda)
+            InitCuda();
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];

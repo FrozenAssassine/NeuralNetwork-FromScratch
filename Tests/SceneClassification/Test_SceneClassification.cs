@@ -1,5 +1,4 @@
 ﻿using NNFromScratch.Core;
-using NNFromScratch.Core.ActivationFunctions;
 using NNFromScratch.Core.Layers;
 using NNFromScratch.Helper;
 
@@ -15,7 +14,6 @@ namespace Tests.SceneClassification
         const int PixelDepth = 3; //rgb
         const int ImageCount = 1000; //total of 24335 images
         const int OutputTypes = 6; //Buildings, Forests, Mountains, Glacier, Street, Sea
-        
         public static void Run()
         {
             float[][] images = ImageHelper.GetImages(datasetPath, ImageCount, ImageWidth, ImageHeight);
@@ -33,23 +31,33 @@ namespace Tests.SceneClassification
                 desired[i] = res;
             }
 
-            var activation = new SigmoidActivation();
             var network = NetworkBuilder.Create()
-                .Stack(new InputLayer(ImageWidth * ImageHeight * PixelDepth, activation))
-                .Stack(new NeuronLayer(1024, activation))
-                .Stack(new NeuronLayer(512, activation))
-                .Stack(new OutputLayer(OutputTypes, activation))
-                .Build();
+                .Stack(new InputLayer(ImageWidth * ImageHeight * PixelDepth))
+                .Stack(new NeuronLayer(1024, ActivationType.Relu))
+                .Stack(new NeuronLayer(512, ActivationType.Relu))
+                .Stack(new NeuronLayer(256, ActivationType.Relu))
+                .Stack(new OutputLayer(OutputTypes, ActivationType.Softmax))
+                .Build(false);
 
-            //network.Load("D:\\imageclassification_cpu.cool");
+            network.Load("D:\\imageclassification.cool");
 
-            network.Train(images, desired, 3,0.1f, true);
+            network.Train(images, desired, 1,0.1f);
             Console.WriteLine("Press enter to Save");
             Console.ReadLine();
 
-            //network.Save("D:\\imageclassification.cool");
+            network.Save("D:\\imageclassification.cool");
 
-            network.Evaluate(images.Take(1000).ToArray(), desired.Take(1000).ToArray(), false);
+            Random random = new Random();
+
+            var randomIndices = Enumerable.Range(0, 1000)
+                                          .Select(_ => random.Next(0, images.Length))
+                                          .Distinct()
+                                          .ToList();
+
+            var randImages = randomIndices.Select(index => images[index]);
+            var randDesired = randomIndices.Select(index => desired[index]);
+
+            network.Evaluate(randImages.ToArray(), randDesired.ToArray(), false);
         }
     }
 }

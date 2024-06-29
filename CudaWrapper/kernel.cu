@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 
+//show more ouputs like memory adress etc.
 //#define DEBUG
 
 int threadsPerBlock = 1024;
@@ -17,67 +18,39 @@ typedef struct Layer {
     float* Errors;
     float* Weights;
     int Size;
+    int Activation;
 } Layer;
 
+int allLayersCount;
 Layer* gpuLayers;
 Layer* cpuLayers;
 
 float* desiredValues;
-
-int allLayersCount;
 
 #define CUDA_CHECK(err, code) \
     if (err != cudaSuccess) { \
         printf("\nCUDA: Error (%s): %s at line %d\n", code, cudaGetErrorString(err), __LINE__); \
     }
 
-__device__ float sigmoid(float x) {
-    return 1.0f / (1.0f + __expf(-x));
-}
-
-__device__ float sigmoidDeriv(float x) {
-    return x * (1.0f - x);
-}
-
-__global__ void output_WeightsBiases(Layer output, Layer previous, float learningRate, int size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        float sigDerivNeuronVal = learningRate * output.Errors[idx] * sigmoidDeriv(output.NeuronValues[idx]);
-        int weightIndex = idx * previous.Size;
-
-        for (int j = 0; j < previous.Size; j++) {
-            atomicAdd(&output.Weights[weightIndex + j], sigDerivNeuronVal * previous.NeuronValues[j]);
-        }
-        atomicAdd(&output.Biases[idx], learningRate * output.Errors[idx] * sigmoidDeriv(output.NeuronValues[idx]));
+__device__ float Activation(float x, int activation) {
+    switch (activation) {
+    case 0: //sigmoid
+        return 1.0f / (1.0f + expf(-x));
+    case 1: //relu
+        return fmaxf(0.0f, x);
+    case 2: //softmax
+        return expf(x) / (1.0f + expf(x));
     }
 }
 
-__global__ void output_Errors(Layer output, float* desired, int size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        output.Errors[idx] = desired[idx] - output.NeuronValues[idx];
-    }
-}
-
-__global__ void hidden_ErrorWeight(Layer next, Layer prev, Layer cur, float learningRate, int size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (idx < size) {
-        float err = 0.0f;
-        int index = idx * prev.Size;
-
-        for (int j = 0; j < next.Size; j++) {
-            err += (next.Errors[j] * next.Weights[j * cur.Size + idx]);
-        }
-        float error = err * sigmoidDeriv(cur.NeuronValues[idx]);
-        cur.Errors[idx] = error;
-
-        error *= learningRate;
-
-        for (int j = 0; j < prev.Size; j++) {
-            atomicAdd(&cur.Weights[index + j], error * prev.NeuronValues[j]);
-        }
-        atomicAdd(&cur.Biases[idx], error);
+__device__ float ActivationDeriv(float x, int activation) {
+    switch (activation) {
+    case 0: //sigmoid deriv
+        return x * (1 - x);
+    case 1: //relu deriv
+        return x > 0.0f ? 1.0f : 0.0f;
+    case 2: //softmax deriv
+        return x * (1.0f - x);
     }
 }
 
@@ -89,7 +62,7 @@ __global__ void ff_hiddenValues(Layer current, Layer previous, int size) {
         for (int j = 0; j < previous.Size; j++) {
             sum += previous.NeuronValues[j] * current.Weights[index + j];
         }
-        current.NeuronValues[idx] = sigmoid(sum + current.Biases[idx]);
+        current.NeuronValues[idx] = Activation(sum + current.Biases[idx], current.Activation);
     }
 }
 
@@ -101,7 +74,48 @@ __global__ void ff_outputValues(Layer output, Layer prev, int size) {
         for (int j = 0; j < prev.Size; j++) {
             sum += prev.NeuronValues[j] * output.Weights[weightIndex + j];
         }
-        output.NeuronValues[idx] = sigmoid(sum + output.Biases[idx]);
+        output.NeuronValues[idx] = Activation(sum + output.Biases[idx], output.Activation);
+    }
+}
+
+__global__ void output_WeightsBiases(Layer output, Layer previous, float learningRate, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        float derivNeuronVal = learningRate * output.Errors[idx] * ActivationDeriv(output.NeuronValues[idx], output.Activation);
+        int weightIndex = idx * previous.Size;
+
+        for (int j = 0; j < previous.Size; j++) {
+            atomicAdd(&output.Weights[weightIndex + j], derivNeuronVal * previous.NeuronValues[j]);
+        }
+        atomicAdd(&output.Biases[idx], learningRate * output.Errors[idx] * ActivationDeriv(output.NeuronValues[idx], output.Activation));
+    }
+}
+
+__global__ void hidden_ErrorWeight(Layer next, Layer prev, Layer cur, float learningRate, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        float err = 0.0f;
+        int index = idx * prev.Size;
+
+        for (int j = 0; j < next.Size; j++) {
+            err += (next.Errors[j] * next.Weights[j * cur.Size + idx]);
+        }
+        float error = err * ActivationDeriv(cur.NeuronValues[idx], cur.Activation);
+        cur.Errors[idx] = error;
+
+        error *= learningRate;
+
+        for (int j = 0; j < prev.Size; j++) {
+            atomicAdd(&cur.Weights[index + j], error * prev.NeuronValues[j]);
+        }
+        atomicAdd(&cur.Biases[idx], error);
+    }
+}
+
+__global__ void output_Errors(Layer output, float* desired, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        output.Errors[idx] = desired[idx] - output.NeuronValues[idx];
     }
 }
 
@@ -114,7 +128,7 @@ float* FeedForward(float* data, int n) {
         Layer& currLayer = gpuLayers[i];
 
         int blocks = (currLayer.Size + threadsPerBlock - 1) / threadsPerBlock;
-        ff_hiddenValues << <blocks, threadsPerBlock >> > (currLayer, prevLayer, currLayer.Size);
+        ff_hiddenValues<< < blocks, threadsPerBlock >> > (currLayer, prevLayer, currLayer.Size);
     }
 
     //Compute neuron values for output layer
@@ -122,7 +136,7 @@ float* FeedForward(float* data, int n) {
     Layer& outLayer = gpuLayers[allLayersCount - 1];
 
     int blocks = (outLayer.Size + threadsPerBlock - 1) / threadsPerBlock;
-    ff_outputValues << <blocks, threadsPerBlock >> > (outLayer, prevLayer, outLayer.Size);
+    ff_outputValues<< <blocks, threadsPerBlock >> > (outLayer, prevLayer, outLayer.Size);
 
     cudaDeviceSynchronize();
     err = cudaGetLastError();
@@ -155,7 +169,7 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desiredOutputs
     output_Errors << <outputBlocks, threadsPerBlock >> > (gpuLayers[allLayersCount - 1], desiredValues, outputLayer.Size);
 
     // Update weights and biases for the output layer
-    output_WeightsBiases << <outputBlocks, threadsPerBlock >> > (gpuLayers[allLayersCount - 1], gpuLayers[allLayersCount - 2], learningRate, outputLayer.Size);
+    output_WeightsBiases<< <outputBlocks, threadsPerBlock >> > (gpuLayers[allLayersCount - 1], gpuLayers[allLayersCount - 2], learningRate, outputLayer.Size);
 
     // Backpropagate the errors to the hidden layers
     for (int i = allLayersCount - 2; i >= 1; i--) {
@@ -164,13 +178,14 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desiredOutputs
         Layer& nextLayer = gpuLayers[i + 1];
 
         int errorBlocks = (currLayer.Size + threadsPerBlock - 1) / threadsPerBlock;
-        hidden_ErrorWeight << <errorBlocks, threadsPerBlock>> > (nextLayer, prevLayer, currLayer, learningRate, currLayer.Size);
+        hidden_ErrorWeight<< <errorBlocks, threadsPerBlock>> > (nextLayer, prevLayer, currLayer, learningRate, currLayer.Size);
     }
 
     cudaDeviceSynchronize();
     err = cudaGetLastError();
     CUDA_CHECK(err, "7");
 }
+
 extern "C" __declspec(dllexport) void Cleanup() {
     //free the memory of every layer from the gpu
     for (int i = 0; i < allLayersCount; i++) {
@@ -236,13 +251,14 @@ extern "C" __declspec(dllexport) void Init(int totalLayer) {
     cpuLayers = new Layer[totalLayer];
 }
 
-extern "C" __declspec(dllexport) void InitLayer(int layerIndex, int prevSize, int size, float* biases, float* weights, float* values, float* errors) {
+extern "C" __declspec(dllexport) void InitLayer(int layerIndex, int prevSize, int size, float* biases, float* weights, float* values, float* errors, int activation) {
 #ifdef DEBUG
     printf("Initializing layer %d with size %d and prevSize %d\n", layerIndex, size, prevSize);
 #endif // DEBUG
 
     Layer& gpuLayer = gpuLayers[layerIndex];
     gpuLayer.Size = size;
+    gpuLayer.Activation = activation;
 
     Layer& cpuLayer = cpuLayers[layerIndex];
     cpuLayer.Size = size;
@@ -250,6 +266,7 @@ extern "C" __declspec(dllexport) void InitLayer(int layerIndex, int prevSize, in
     cpuLayer.Errors = errors;
     cpuLayer.NeuronValues = values;
     cpuLayer.Weights = weights;
+    cpuLayer.Activation = activation;
 
 #ifdef DEBUG:
 

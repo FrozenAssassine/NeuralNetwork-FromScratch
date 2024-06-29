@@ -1,5 +1,4 @@
-﻿using NNFromScratch.Core.ActivationFunctions;
-using NNFromScratch.Core.Layers;
+﻿using NNFromScratch.Core.Layers;
 
 namespace NNFromScratch.Core
 {
