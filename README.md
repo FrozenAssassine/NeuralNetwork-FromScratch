@@ -24,8 +24,12 @@ At the current point I would not recommend this in any production environment, f
 - **CUDA Support**: Accelerates neural network training using GPU resources.
 
 ## 📊 Benchmarks
-- following soon
+| Training Details | GPU (CUDA, RTX 3050) | CPU (i9-10900) |
+|------------------|----------------------|----------------|
+| 100 images, 150x150x3 (67500 inputs, 1024 hidden, 512 hidden, 6 outputs) | 6.472 seconds | 9.514 seconds |
+| 100 images, 150x150x3 (67500 inputs, 1024 hidden, 512 hidden, 6 outputs) | 6.832 seconds | 19.765 seconds |
 
+  
 ## 🚀 Get Started
 1. Clone the repository.
 2. Ensure you have the necessary dependencies for C# and CUDA development.
