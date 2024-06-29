@@ -17,7 +17,7 @@ public class NNModel
 
         //initialize the neural network
         var hidden = layers.Length == 1 ? layers.Skip(1) : layers.Skip(1).Take(layers.Length - 2);
-        if (layers[0] is InputLayer inputLayer && layers[layers.Length - 1] is OutputLayer outputLayer)
+        if (layers[0] is InputLayer inputLayer && layers[^1] is OutputLayer outputLayer)
         {
             nn = new NeuralNetwork(inputLayer, hidden.ToArray(), outputLayer);
         }
@@ -53,7 +53,7 @@ public class NNModel
         float[] prediction = null;
         var time = BenchmarkExtension.Benchmark(() =>
         {
-            prediction = nn.FeedForward(input, false);
+            prediction = nn.FeedForward(input);
         });
 
         if (output)
@@ -124,37 +124,6 @@ public class NNModel
         return accuracys;
     }
 
-    public void TrainAllFlattened(float[] inputs, float[] desired, int totalItems, int inputsLength, int desiredLength, int epochs, float learningRate = 0.1f)
-    {
-        //let cuda check for available devices:
-        if (!CudaAccel.CheckCuda())
-            return;
-
-        Console.WriteLine(new string('-', 50) + "\n");
-
-        var trainingTime = BenchmarkExtension.Benchmark(() =>
-        {
-            Stopwatch epochTime = new Stopwatch();
-            for (int e = 0; e < epochs; e++)
-            {
-                epochTime.Restart();
-
-                Console.WriteLine("Start epoch");
-
-                CudaAccel.TrainAll(inputs, desired, totalItems, inputsLength, desiredLength, learningRate);
-
-                Console.WriteLine(new string('-', 50));
-                Console.WriteLine($"Epoch {e + 1} took {epochTime.ElapsedMilliseconds}ms; ");
-
-                if (e != epochs - 1)
-                    Console.WriteLine(new string('-', 50));
-            }
-        });
-
-        //important to free memory from gpu
-        CudaAccel.DoneTraining();
-    }
-
     public void Save(string path)
     {
         Console.WriteLine("Saving model data to file");
@@ -179,7 +148,7 @@ public class NNModel
         int correct = 0;
         for (int i = 0; i < x.Length; i++)
         {
-            if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(nn.FeedForward(x[i], useCuda)))
+            if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(nn.FeedForward(x[i])))
                 correct++;
         }
 

@@ -39,16 +39,11 @@ namespace Tests.SceneClassification
                 .Stack(new NeuronLayer(1024, activation))
                 .Stack(new NeuronLayer(512, activation))
                 .Stack(new OutputLayer(OutputTypes, activation))
-                .Build(false);
+                .Build();
 
             //network.Load("D:\\imageclassification_cpu.cool");
 
-            float[] X_flattened = images.SelectMany(innerArray => innerArray).ToArray();
-            float[] y_flattened = desired.SelectMany(innerArray => innerArray).ToArray();
-
-
-            //network.TrainAllFlattened(X_flattened, y_flattened, ImageCount, images[0].Length, desired[0].Length, 3,0.1f);
-            network.Train(images, desired, 3,0.1f, false);
+            network.Train(images, desired, 3,0.1f, true);
             Console.WriteLine("Press enter to Save");
             Console.ReadLine();
 

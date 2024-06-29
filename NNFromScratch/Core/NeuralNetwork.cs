@@ -1,6 +1,5 @@
 ﻿using NNFromScratch.Core.Layers;
 using NNFromScratch.Helper;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace NNFromScratch.Core;
 
@@ -118,17 +117,8 @@ internal class NeuralNetwork
 
         return outputLayer.NeuronValues;
     }
-    private float[] FeedForward_GPU(float[] data)
+    public float[] FeedForward(float[] data)
     {
-        float[] prediction = new float[outputLayer.Size];
-        CudaAccel.Predict(data, prediction, inputLayer.Size);
-        return prediction;
-    }
-
-    public float[] FeedForward(float[] data, bool useCuda)
-    {
-        if (useCuda)
-            return FeedForward_GPU(data);
         return FeedForward_CPU(data);
     }
 
