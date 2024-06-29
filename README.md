@@ -13,9 +13,10 @@
 
 ## 🤔 What is this project?
 This project is a neural network implementation from scratch in C# with CUDA support written in C++. It currently supports Optical Digit Recognition (ODR) trained with 60,000 images and can also perform XOR as a simple initial test.
+More complex image classification is in progress. I trained it with 2000 rgb images of 150 * 150 pixels and got some ok results.
 
 ## ❗Info
-At the current point I would not recommend this in any production environment, for me its just a fun little project to learn more about CUDA and Neural Networks.
+At the current point I would not recommend this in any production environment, for me it's just a fun project to learn more about CUDA and Neural Networks.
 
 
 ## 🛠️ Features
