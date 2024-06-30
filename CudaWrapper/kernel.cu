@@ -40,6 +40,8 @@ __device__ float Activation(float x, int activation) {
         return fmaxf(0.0f, x);
     case 2: //softmax
         return expf(x) / (1.0f + expf(x));
+    case 3: //Tanh
+        return tanhf(x);
     }
 }
 
@@ -51,6 +53,8 @@ __device__ float ActivationDeriv(float x, int activation) {
         return x > 0.0f ? 1.0f : 0.0f;
     case 2: //softmax deriv
         return x * (1.0f - x);
+    case 3: //Tanh
+        return 1- powf(tanh(x), 2);
     }
 }
 
