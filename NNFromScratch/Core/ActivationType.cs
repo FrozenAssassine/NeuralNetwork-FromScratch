@@ -5,5 +5,6 @@
         Sigmoid,
         Relu,
         Softmax,
+        Tanh
     }
 }
