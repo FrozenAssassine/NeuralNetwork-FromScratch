@@ -5,5 +5,9 @@
         Sigmoid,
         Relu,
         Softmax,
+        TanH,
+        LeakyRelu,
+        ELU,
+        Swish,
     }
 }
