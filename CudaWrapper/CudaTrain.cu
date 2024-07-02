@@ -69,6 +69,48 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desired, int s
     CUDA_CHECK(err, "Sync Training Threads");
 }
 
+float* gpu_inputBatch;
+float* gpu_desiredBatch;
+
+extern "C" __declspec(dllexport) void TrainBatch(float* inputs, float* desired, int batchSize, float learningRate) {
+    cudaError_t err;
+
+    int inputSize = cpu_allLayer[0]->Size; //Size of input per item
+    int outputSize = cpu_allLayer[allLayerCount - 1]->Size; //Size of output per item
+
+    if (gpu_inputBatch == nullptr) {
+        err = cudaMalloc(&gpu_inputBatch, batchSize * inputSize * sizeof(float));
+        CUDA_CHECK(err, "Malloc Input Batch");
+    }
+
+    if (gpu_desiredBatch == nullptr) {
+        err = cudaMalloc(&gpu_desiredBatch, batchSize * outputSize * sizeof(float));
+        CUDA_CHECK(err, "Malloc Desired Batch");
+    }
+
+    err = cudaMemcpy(gpu_inputBatch, inputs, batchSize * inputSize * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Memcpy Inputs");
+    err = cudaMemcpy(gpu_desiredBatch, desired, batchSize * outputSize * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Memcpy Desired Values");
+
+    //Actually train the batches:
+    for (int i = 0; i < batchSize; ++i) {
+        // Copy current batch item to neuron values
+        err = cudaMemcpy(gpu_allLayer[0]->NeuronValues, gpu_inputBatch + i * inputSize, inputSize * sizeof(float), cudaMemcpyDeviceToDevice);
+        CUDA_CHECK(err, "Memcpy Input to Neuron Values");
+
+        FeedForward();
+
+        //Train:
+        for (int j = allLayerCount - 1; j >= 0; j--) {
+            gpu_allLayer[j]->Train(threadsPerBlock, gpu_desiredBatch + i * outputSize, learningRate);
+        }
+
+        err = cudaDeviceSynchronize();
+        CUDA_CHECK(err, "Sync Training Threads");
+    }
+}
+
 extern "C" __declspec(dllexport) void Init(int totalLayers) {
     printf("Training on CUDA is enabled\n");
     cudaDeviceProp prop;

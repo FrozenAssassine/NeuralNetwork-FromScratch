@@ -22,6 +22,9 @@ internal static class CudaAccel
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
     public static extern bool CheckCuda();
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void TrainBatch(float[] inputs, float[] desired, int batchSize, float learningRate);
+
 
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern void InitInputLayer(

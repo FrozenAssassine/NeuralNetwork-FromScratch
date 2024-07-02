@@ -141,6 +141,93 @@ public class NNModel
         return accuracys;
     }
 
+    public float[] TrainBatch(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, int batchSize = 32, int loggingInterval = 1, bool evaluate = false, int evaluatePercent = 10)
+    {
+        if (inputs[0].Length != nn.inputLayer.Size)
+            throw new Exception("Input size does not match input layer count");
+
+        if (useCuda)
+        {
+            useCuda = CudaAccel.CheckCuda();
+        }
+        if (useCuda)
+            InitCuda();
+
+        Console.WriteLine(new string('-', 50) + "\n");
+        float[] accuracies = new float[epochs];
+
+        var trainingTime = BenchmarkExtension.Benchmark(() =>
+        {
+            Stopwatch epochTime = new Stopwatch();
+            Stopwatch stepTimeSW = new Stopwatch();
+
+            for (int e = 0; e < epochs; e++)
+            {
+                float averageStepTime = 0;
+                epochTime.Restart();
+                stepTimeSW.Start();
+
+                int numBatches = inputs.Length / batchSize;
+                for (int batchIndex = 0; batchIndex < numBatches; batchIndex++)
+                {
+                    // Flatten batch inputs and desired outputs
+                    float[] flatBatchInputs = Flatten(inputs, batchIndex * batchSize, batchSize);
+                    float[] flatBatchDesired = Flatten(desired, batchIndex * batchSize, batchSize);
+
+                    // Train on batch using CUDA
+                    CudaAccel.TrainBatch(flatBatchInputs, flatBatchDesired, batchSize, learningRate);
+
+                    // Logging
+                    if ((batchIndex + 1) % loggingInterval == 0)
+                    {
+                        stepTimeSW.Stop();
+                        averageStepTime += stepTimeSW.ElapsedMilliseconds;
+
+                        Console.WriteLine($"Epoch {e + 1}/{epochs}; Batch {batchIndex + 1}/{numBatches}; " +
+                                          $"({stepTimeSW.ElapsedMilliseconds}ms, {stepTimeSW.ElapsedTicks}ticks)");
+
+                        stepTimeSW.Restart();
+                    }
+                }
+
+                Console.WriteLine(new string('-', 50));
+                Console.WriteLine($"Epoch {e + 1} took {epochTime.ElapsedMilliseconds}ms; " +
+                                  (averageStepTime > 0 ? $"avg({(int)averageStepTime / numBatches}ms/batch)" : ""));
+
+                // Evaluate after every epoch
+                if (evaluate)
+                {
+                    int evaluateSize = inputs.Length * evaluatePercent / 100;
+                    accuracies[e] = Evaluate(inputs.Take(evaluateSize).ToArray(), desired.Take(evaluateSize).ToArray(), false).percent;
+                }
+
+                if (e != epochs - 1)
+                    Console.WriteLine(new string('-', 50));
+            }
+        });
+
+        // Release GPU memory
+        if (useCuda)
+            CudaAccel.DoneTraining();
+
+        Console.WriteLine(new string('=', 50) + "\n");
+        Console.WriteLine($"Training took: {trainingTime}\n");
+
+        return accuracies;
+    }
+
+    // Helper function to flatten 2D array into 1D array
+    private float[] Flatten(float[][] array, int startIndex, int count)
+    {
+        float[] result = new float[count * array[0].Length];
+        int index = 0;
+        for (int i = startIndex; i < startIndex + count; i++)
+        {
+            Array.Copy(array[i], 0, result, index, array[i].Length);
+            index += array[i].Length;
+        }
+        return result;
+    }
     public void Save(string path)
     {
         Console.WriteLine("Saving model data to file");
