@@ -78,7 +78,18 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="BaseLayer.cu" />
+    <CudaCompile Include="CudaTrain.cu" />
+    <CudaCompile Include="OutputLayer.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ActivationFunctions.h" />
+    <ClInclude Include="InputLayer.h" />
+    <ClInclude Include="BaseLayer.h" />
+    <ClInclude Include="OutputLayer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="InputLayer.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

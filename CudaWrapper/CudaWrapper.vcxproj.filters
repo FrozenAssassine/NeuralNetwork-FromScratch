@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="CudaTrain.cu" />
+    <CudaCompile Include="BaseLayer.cu">
+      <Filter>Layer</Filter>
+    </CudaCompile>
+    <CudaCompile Include="OutputLayer.cu">
+      <Filter>Layer</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Layer">
+      <UniqueIdentifier>{3e731072-5fc0-4200-bfae-fcd5875329d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools">
+      <UniqueIdentifier>{4aead664-898e-4894-842c-b8feddd08abc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="InputLayer.cu">
+      <Filter>Layer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BaseLayer.h">
+      <Filter>Layer</Filter>
+    </ClInclude>
+    <ClInclude Include="InputLayer.h">
+      <Filter>Layer</Filter>
+    </ClInclude>
+    <ClInclude Include="OutputLayer.h">
+      <Filter>Layer</Filter>
+    </ClInclude>
+    <ClInclude Include="ActivationFunctions.h">
+      <Filter>Tools</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

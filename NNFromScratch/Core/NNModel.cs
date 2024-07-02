@@ -1,6 +1,7 @@
 ﻿using NNFromScratch.Core.Layers;
 using NNFromScratch.Helper;
 using System.Diagnostics;
+using System.Reflection.Emit;
 
 namespace NNFromScratch.Core;
 
@@ -28,7 +29,6 @@ public class NNModel
         else
             throw new Exception("Input or output layer are not an instance of type 'InputLayer' or 'OutputLayer'");
 
-
         //use cuda only if available:
         bool hasCuda = CudaAccel.CheckCuda();
         if(useCuda && !hasCuda)
@@ -52,14 +52,20 @@ public class NNModel
         cudaLayersInitialized = true;
 
         //pass the references for all c# arrays to the c++ code:
-        int layerIndex = 0;
-        foreach (var layer in layers)
-        {
-            int prevSize = layerIndex > 0 ? layers[layerIndex - 1].Size : 0;
-            CudaAccel.InitLayer(layerIndex++, prevSize, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors, layer.ActivationFunction);
-        }
-    }
 
+        var inL = nn.inputLayer;
+        CudaAccel.InitInputLayer(0, inL.Size, inL.Biases, inL.Weights, inL.NeuronValues, inL.Errors, inL.ActivationFunction);
+        
+        int layerIndex = 1;
+        foreach (var layer in nn.hiddenLayers)
+        {
+            NeuronLayer prev = layerIndex == 1 ? nn.inputLayer : layers[layerIndex - 1];
+            CudaAccel.InitHiddenLayer(layerIndex++, prev.Size, layer.Size, layer.Biases, layer.Weights, layer.NeuronValues, layer.Errors, layer.ActivationFunction);
+        }
+
+        var outL = nn.outputLayer;
+        CudaAccel.InitOutputLayer(layerIndex++, nn.hiddenLayers[^1].Size, outL.Size, outL.Biases, outL.Weights, outL.NeuronValues, outL.Errors, outL.ActivationFunction);
+    }
     public float[] Predict(float[] input, bool output = false)
     {
         float[] prediction = null;
@@ -67,12 +73,10 @@ public class NNModel
         {
             prediction = nn.FeedForward(input);
         });
-
         if (output)
             Console.WriteLine("Prediction time " + time);
         return prediction;
     }
-
     public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, int loggingInterval = 100, bool evaluate = false, int evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.inputLayer.Size)
@@ -83,10 +87,8 @@ public class NNModel
         {
             useCuda = CudaAccel.CheckCuda();
         }
-        
         if(useCuda)
             InitCuda();
-
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];
 
