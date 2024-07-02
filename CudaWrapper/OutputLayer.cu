@@ -4,7 +4,7 @@
 #include "ActivationFunctions.h"
 #include <iostream>
 
-__global__ void ff_outputValues(BaseLayer* outputLayer, int size) {
+/*__global__ void ff_outputValues(BaseLayer* outputLayer, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float sum = 0.0f;
@@ -14,16 +14,28 @@ __global__ void ff_outputValues(BaseLayer* outputLayer, int size) {
         }
         outputLayer->NeuronValues[idx] = ActivationFunctions::Activation(sum + outputLayer->Biases[idx], outputLayer->Activation);
     }
-}
+}*/
 
-__global__ void output_Errors(BaseLayer* output, float* desired, int size) {
+__global__ void ff_outputValues(float* neuronValues, float* prevNeuronValues, float* weights, float* biases, int previousLayerSize, int activationFunction, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
-        output->Errors[idx] = desired[idx] - output->NeuronValues[idx];
+        float sum = 0.0f;
+        int weightIndex = idx * previousLayerSize;
+        for (int j = 0; j < previousLayerSize; j++) {
+            sum += prevNeuronValues[j] * weights[weightIndex + j];
+        }
+        neuronValues[idx] = ActivationFunctions::Activation(sum + biases[idx], activationFunction);
     }
 }
 
-__global__ void output_WeightsBiases(BaseLayer* output, float learningRate, int size) {
+__global__ void output_Errors(float * errors, float * neuronValues, float* desired, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        errors[idx] = desired[idx] - neuronValues[idx];
+    }
+}
+
+/*__global__ void output_WeightsBiases(BaseLayer* output, float learningRate, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float derivNeuronVal = learningRate * output->Errors[idx] * ActivationFunctions::ActivationDeriv(output->NeuronValues[idx], output->Activation);
@@ -34,28 +46,48 @@ __global__ void output_WeightsBiases(BaseLayer* output, float learningRate, int 
         }
         atomicAdd(&output->Biases[idx], learningRate * output->Errors[idx] * ActivationFunctions::ActivationDeriv(output->NeuronValues[idx], output->Activation));
     }
+}*/
+
+__global__ void output_WeightsBiases(float* errors, float* neuronValues, float* prevNeuronValues, float* weights, float* biases, int previousLayerSize, int size, int activationFunction, float learningRate) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        float derivNeuronVal = learningRate * errors[idx] * ActivationFunctions::ActivationDeriv(neuronValues[idx], activationFunction);
+        int weightIndex = idx * previousLayerSize;
+
+        for (int j = 0; j < previousLayerSize; j++) {
+            atomicAdd(&weights[weightIndex + j], derivNeuronVal * prevNeuronValues[j]);
+        }
+        atomicAdd(&biases[idx], learningRate * errors[idx] * ActivationFunctions::ActivationDeriv(neuronValues[idx], activationFunction));
+    }
 }
 
-
 void OutputLayer::FeedForward(int threadsPerBlock) {
-
     //Compute neuron values for output layer
     int blocks = (this->Size + threadsPerBlock - 1) / threadsPerBlock;
-    ff_outputValues << <blocks, threadsPerBlock >> > (this, this->Size);
+    ff_outputValues << <blocks, threadsPerBlock >> > (this->NeuronValues, this->previousLayer->NeuronValues, this->Weights, this->Biases, this->previousLayer->Size, this->Activation, this->Size);
 }
 
 void OutputLayer::Train(int threadsPerBlock, float * desiredValues, float learningRate) {
-    printf("Train output");
 
     // Calculate errors for the output layer
-    int outputBlocks = (this->Size + threadsPerBlock - 1) / threadsPerBlock;
-    output_Errors << <outputBlocks, threadsPerBlock >> > (this, desiredValues, this->Size);
+    int outputBlocks = (this->Size + threadsPerBlock - 1) / threadsPerBlock;  
+    output_Errors << <outputBlocks, threadsPerBlock >> > (
+        this->Errors, 
+        this->NeuronValues, 
+        desiredValues, 
+        this->Size
+        );
      
-
     // Update weights and biases for the output layer
     output_WeightsBiases << <outputBlocks, threadsPerBlock >> > (
-        this,
-        learningRate,
-        this->Size
+        this->Errors,
+        this->NeuronValues,
+        this->previousLayer->NeuronValues,
+        this->Weights,
+        this->Biases,
+        this->previousLayer->Size,
+        this->Size,
+        this->Activation,
+        learningRate
         );
 }

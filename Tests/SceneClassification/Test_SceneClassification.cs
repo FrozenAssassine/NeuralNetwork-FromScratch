@@ -39,7 +39,7 @@ namespace Tests.SceneClassification
                 .Stack(new OutputLayer(OutputTypes, ActivationType.Softmax))
                 .Build();
 
-            network.Load("D:\\imageclassification.cool");
+            //network.Load("D:\\imageclassification.cool");
 
             network.Train(images, desired, 1,0.1f);
             Console.WriteLine("Press enter to Save");

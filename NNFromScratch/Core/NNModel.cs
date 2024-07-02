@@ -64,7 +64,7 @@ public class NNModel
         }
 
         var outL = nn.outputLayer;
-        CudaAccel.InitOutputLayer(layerIndex++, nn.hiddenLayers[^1] .Size, outL.Size, outL.Biases, outL.Weights, outL.NeuronValues, outL.Errors, outL.ActivationFunction);
+        CudaAccel.InitOutputLayer(layerIndex++, nn.hiddenLayers[^1].Size, outL.Size, outL.Biases, outL.Weights, outL.NeuronValues, outL.Errors, outL.ActivationFunction);
     }
     public float[] Predict(float[] input, bool output = false)
     {

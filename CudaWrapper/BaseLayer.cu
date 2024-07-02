@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-__global__ void hidden_ErrorWeight(BaseLayer* current, float learningRate, int size) {
+/*__global__ void hidden_ErrorWeight(BaseLayer* current, float learningRate, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float err = 0.0f;
@@ -26,9 +26,43 @@ __global__ void hidden_ErrorWeight(BaseLayer* current, float learningRate, int s
         }
         atomicAdd(&current->Biases[idx], error);
     }
+}*/
+
+__global__ void hidden_ErrorWeight(
+    float* neuronValues,
+    float* prevNeuronValues,
+    float* errors,
+    float* nextErrors,
+    float* weights,
+    float* nextWeights,
+    float* biases,
+    int previousLayerSize,
+    int nextLayerSize,
+    int size,
+    int activationFunction,
+    float learningRate
+) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        float err = 0.0f;
+        int index = idx * previousLayerSize;
+
+        for (int j = 0; j < nextLayerSize; j++) {
+            err += (nextErrors[j] * nextWeights[j * size + idx]);
+        }
+        float error = err * ActivationFunctions::ActivationDeriv(neuronValues[idx], activationFunction);
+        errors[idx] = error;
+
+        error *= learningRate;
+
+        for (int j = 0; j < previousLayerSize; j++) {
+            atomicAdd(&weights[index + j], error * prevNeuronValues[j]);
+        }
+        atomicAdd(&biases[idx], error);
+    }
 }
 
-__global__ void ff_hiddenValues(BaseLayer* current, int size) {
+/* __global__ void ff_hiddenValues2(BaseLayer* current, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float sum = 0.0f;
@@ -38,17 +72,49 @@ __global__ void ff_hiddenValues(BaseLayer* current, int size) {
         }
         current->NeuronValues[idx] = ActivationFunctions::Activation(sum + current->Biases[idx], current->Activation);
     }
+}*/
+
+__global__ void ff_hiddenValues(int prevSize, float * prevNeuronVal, float * curWeights, float * curNeuronVal, float * curBiases, int curActivation, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        float sum = 0.0f;
+        int index = idx * prevSize;
+        for (int j = 0; j < prevSize; j++) {
+            sum += prevNeuronVal[j] * curWeights[index + j];
+        }
+        curNeuronVal[idx] = ActivationFunctions::Activation(sum + curBiases[idx], curActivation);
+    }
 }
 
 void BaseLayer::FeedForward(int threadsPerBlock) {
 
     int blocks = (this->Size + threadsPerBlock - 1) / threadsPerBlock;
-    ff_hiddenValues << < blocks, threadsPerBlock >> > (this, this->Size);
+    ff_hiddenValues << < blocks, threadsPerBlock >> > (
+        this->previousLayer->Size,
+        this->previousLayer->NeuronValues,
+        this->Weights, 
+        this->NeuronValues,
+        this->Biases, 
+        this->Activation,
+        this->Size
+        );
 }
 
 void BaseLayer::Train(int threadsPerBlock, float* desiredValues, float learningRate) {
-    printf("Train Base");
-
     int errorBlocks = (this->Size + threadsPerBlock - 1) / threadsPerBlock;
-    hidden_ErrorWeight << <errorBlocks, threadsPerBlock >> > (this, learningRate, this->Size);
+
+    hidden_ErrorWeight << < errorBlocks, threadsPerBlock >> > (
+        this->NeuronValues, 
+        this->previousLayer->NeuronValues,
+        this->Errors,
+        this->nextLayer->Errors,
+        this->Weights,
+        this->nextLayer->Weights,
+        this->Biases, 
+        this->previousLayer->Size, 
+        this->nextLayer->Size, 
+        this->Size, 
+        this->Activation, 
+        learningRate
+        );
 }
