@@ -35,5 +35,8 @@
     <ClInclude Include="ActivationFunctions.h">
       <Filter>Tools</Filter>
     </ClInclude>
+    <ClInclude Include="BaseLayer.h">
+      <Filter>Layer</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

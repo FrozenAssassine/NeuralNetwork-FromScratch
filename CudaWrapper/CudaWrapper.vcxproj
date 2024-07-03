@@ -84,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActivationFunctions.h" />
+    <ClInclude Include="BaseLayer.h" />
     <ClInclude Include="InputLayer.h" />
     <ClInclude Include="DenseLayer.h" />
     <ClInclude Include="OutputLayer.h" />

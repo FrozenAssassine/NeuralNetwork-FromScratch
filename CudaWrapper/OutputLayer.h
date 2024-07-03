@@ -1,7 +1,7 @@
 #pragma once
 #include "DenseLayer.h"
 
-class OutputLayer : public DenseLayer
+class OutputLayer : public BaseLayer
 {
 public:
 	void OutputLayer::FeedForward(int threadsPerBlock) override;

@@ -1,15 +1,9 @@
 #pragma once
-class DenseLayer
+#include "BaseLayer.h"
+
+class DenseLayer : public BaseLayer
 {
 public:
-	DenseLayer* previousLayer;
-	DenseLayer* nextLayer;
-	float* Weights;
-	float* Biases;
-	float* Errors;
-	float* NeuronValues;
-	int Size;
-	int Activation;
 
 	virtual void FeedForward(int threadsPerBlock);
 
