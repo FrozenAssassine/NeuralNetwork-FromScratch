@@ -9,7 +9,7 @@ internal class Test_XOR
     {
         var nnmodel = NetworkBuilder.Create()
             .Stack(new InputLayer(2))
-            .Stack(new NeuronLayer(4, ActivationType.Sigmoid))
+            .Stack(new DenseLayer(4, ActivationType.Sigmoid))
             .Stack(new OutputLayer(2, ActivationType.Sigmoid))
             .Build();
 

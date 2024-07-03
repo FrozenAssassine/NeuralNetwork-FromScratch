@@ -11,7 +11,9 @@ public:
 	int Size;
 	int Activation;
 
-	virtual void FeedForward(int threadsPerBlock);
+	virtual ~BaseLayer() = default;
 
-	virtual void Train(int threadsPerBlock, float* desiredValues, float learningRate);
+	virtual void FeedForward(int threadsPerBlock) = 0;
+
+	virtual void Train(int threadsPerBlock, float* desiredValues, float learningRate) = 0;
 };

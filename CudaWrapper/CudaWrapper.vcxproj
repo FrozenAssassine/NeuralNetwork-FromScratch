@@ -78,14 +78,15 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="BaseLayer.cu" />
+    <CudaCompile Include="DenseLayer.cu" />
     <CudaCompile Include="CudaTrain.cu" />
     <CudaCompile Include="OutputLayer.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActivationFunctions.h" />
-    <ClInclude Include="InputLayer.h" />
     <ClInclude Include="BaseLayer.h" />
+    <ClInclude Include="InputLayer.h" />
+    <ClInclude Include="DenseLayer.h" />
     <ClInclude Include="OutputLayer.h" />
   </ItemGroup>
   <ItemGroup>

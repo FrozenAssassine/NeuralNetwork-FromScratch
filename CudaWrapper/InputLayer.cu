@@ -3,7 +3,6 @@
 
 void InputLayer::FeedForward(int threadsPerBlock) {
 
-	printf("Feed Forward Input\n");
 	//nothing to implement here
 }
 

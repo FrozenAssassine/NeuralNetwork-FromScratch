@@ -8,9 +8,10 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#include "BaseLayer.h"
+#include "DenseLayer.h"
 #include "InputLayer.h"
 #include "OutputLayer.h"
+#include "BaseLayer.h"
 
 #define DEBUG
 
@@ -67,6 +68,18 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desired, int s
 
     err = cudaDeviceSynchronize();
     CUDA_CHECK(err, "Sync Training Threads");
+}
+
+//Predictions only work while training on the gpu, otherwise the data is not copied to the gpu memory.
+extern "C" __declspec(dllexport) float* Predict(float* data, float* prediction) {
+
+    cudaError_t err = cudaMemcpy(gpu_allLayer[0]->NeuronValues, data, cpu_allLayer[0]->Size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Memcpy Inputs for Prediction");
+
+    FeedForward();
+
+    BaseLayer * outLayer = gpu_allLayer[allLayerCount - 1];
+    cudaMemcpy(prediction, outLayer->NeuronValues, sizeof(outLayer->Size) * sizeof(float), cudaMemcpyDeviceToHost);
 }
 
 extern "C" __declspec(dllexport) void Init(int totalLayers) {
@@ -201,7 +214,7 @@ extern "C" __declspec(dllexport) void InitOutputLayer(
 }
 
 
-extern "C" __declspec(dllexport) void InitHiddenLayer(
+extern "C" __declspec(dllexport) void InitDenseLayer(
     int layerIndex,
     int prevSize,
     int size,
@@ -211,8 +224,8 @@ extern "C" __declspec(dllexport) void InitHiddenLayer(
     float* errors, 
     int activation) 
 {
-    gpu_allLayer[layerIndex] = new BaseLayer();
-    cpu_allLayer[layerIndex] = new BaseLayer();
+    gpu_allLayer[layerIndex] = new DenseLayer();
+    cpu_allLayer[layerIndex] = new DenseLayer();
 
     BaseLayer* cpuLayer = cpu_allLayer[layerIndex];
     BaseLayer* gpuLayer = gpu_allLayer[layerIndex];

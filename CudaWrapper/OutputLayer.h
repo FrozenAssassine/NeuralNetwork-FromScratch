@@ -1,5 +1,5 @@
 #pragma once
-#include "BaseLayer.h"
+#include "DenseLayer.h"
 
 class OutputLayer : public BaseLayer
 {
