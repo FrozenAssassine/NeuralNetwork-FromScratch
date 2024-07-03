@@ -14,12 +14,12 @@ public class MathHelper
     }
     public static float RandomWeight()
     {
-        return (float)random.NextDouble();
+        return (random.NextSingle() * 2) - 1;
     }
 
     public static float RandomBias()
     {
-        return (float)random.NextDouble();
+        return (random.NextSingle() * 2) - 1;
     }
 
     public static int GetMaximumIndex(float[] items)

@@ -1,7 +1,4 @@
-﻿
-
-using NNFromScratch.Helper;
-using System.Runtime.CompilerServices;
+﻿using NNFromScratch.Helper;
 
 namespace NNFromScratch.Core.Layers;
 
@@ -58,15 +55,15 @@ public class OutputLayer : BaseLayer
 
             for (int j = 0; j < this.PreviousLayer.Size; j++)
             {
-                this.Weights[weightIndex + j] = derivNeuronVal * this.PreviousLayer.NeuronValues[j];
+                this.Weights[weightIndex + j] += derivNeuronVal * this.PreviousLayer.NeuronValues[j];
             }
-            this.Biases[idx] = learningRate * this.Errors[idx] * ActivationFunctions.ActivationDeriv(this.NeuronValues[idx], this.ActivationFunction);
+            this.Biases[idx] += learningRate * this.Errors[idx] * ActivationFunctions.ActivationDeriv(this.NeuronValues[idx], this.ActivationFunction);
         });
     }
 
-    public override void Initialize(BaseLayer previousLayer)
+    public override void Initialize()
     {
-        LayerInitialisationHelper.InitializeLayer(this, previousLayer);
+        LayerInitialisationHelper.InitializeLayer(this);
     }
 
     public override void InitializeCuda(int index)

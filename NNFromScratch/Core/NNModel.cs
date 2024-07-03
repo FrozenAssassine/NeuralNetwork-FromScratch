@@ -35,26 +35,14 @@ public class NNModel
 
         //initialize the cuda accelerator and pass the total number of layers:
         CudaAccel.Init(layers.Length);
-    }
-
-    private void InitCudaLayer(BaseLayer layer)
-    {
-
-    }
-
-    private void InitCuda()
-    {
-        if (cudaLayersInitialized)
-            return;
-
-        cudaLayersInitialized = true;
 
         //pass the references for all c# arrays to the c++ code:
-        for(int i = 0; i<layers.Length; i++)
+        for (int i = 0; i < layers.Length; i++)
         {
             layers[i].InitializeCuda(i);
         }
     }
+
     public float[] Predict(float[] input, bool output = false)
     {
         float[] prediction = null;
@@ -66,6 +54,7 @@ public class NNModel
             Console.WriteLine("Prediction time " + time);
         return prediction;
     }
+
     public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, int loggingInterval = 100, bool evaluate = false, int evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.allLayer[0].Size)
@@ -73,11 +62,7 @@ public class NNModel
 
         //let cuda check for available devices:
         if (useCuda)
-        {
             useCuda = CudaAccel.CheckCuda();
-        }
-        if(useCuda)
-            InitCuda();
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];

@@ -21,12 +21,15 @@ internal class LayerInitialisationHelper
         }
     }
     
-    public static void InitializeLayer(BaseLayer layer, BaseLayer previousLayer)
+    public static void InitializeLayer(BaseLayer layer)
     {
         layer.Biases = new float[layer.Size];
         layer.NeuronValues = new float[layer.Size];
         layer.Errors = new float[layer.Size];
-        layer.Weights = new float[layer.Size * previousLayer.Size];
+
+        //first layer does not have previousLayer:
+        if(layer.PreviousLayer != null)
+            layer.Weights = new float[layer.Size * layer.PreviousLayer.Size];
 
         FillRandom(layer.Biases, layer.Weights);
     }

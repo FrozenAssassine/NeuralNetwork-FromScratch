@@ -15,9 +15,9 @@ namespace NNFromScratch.Core.Layers
             //nothing to feed forward here
         }
 
-        public override void Initialize(BaseLayer previousLayer)
+        public override void Initialize()
         {
-            LayerInitialisationHelper.InitializeLayer(this, previousLayer);
+            LayerInitialisationHelper.InitializeLayer(this);
         }
 
         public override void InitializeCuda(int index)
@@ -37,6 +37,9 @@ namespace NNFromScratch.Core.Layers
 
         public override void Summary()
         {
+            if(Weights == null)
+                Console.WriteLine($"Input Layer of {Size} Neurons");
+            else
             Console.WriteLine($"Input Layer of {Size} Neurons and {Weights.Length} Weights");
         }
 

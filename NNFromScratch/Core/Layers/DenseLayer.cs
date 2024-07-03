@@ -1,6 +1,4 @@
 ﻿using NNFromScratch.Helper;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
 
 namespace NNFromScratch.Core.Layers
 {
@@ -28,17 +26,17 @@ namespace NNFromScratch.Core.Layers
 
                 error *= learningRate;
 
-                for (int j = 0; j < PreviousLayer.Size; j++)
+                for (int j = 0; j < this.PreviousLayer.Size; j++)
                 {
-                    this.Weights[index + j] = error * PreviousLayer.NeuronValues[j];
+                    this.Weights[index + j] += error * this.PreviousLayer.NeuronValues[j];
                 }
-                this.Weights[idx] = error;
+                this.Biases[idx] += error;
             });
         }
 
         public override void FeedForward()
         {
-            Parallel.For(0, this.Size, (idx) =>
+            for(int idx  =0; idx< this.Size; idx++)
             {
                 float sum = 0.0f;
                 int index = idx * this.PreviousLayer.Size;
@@ -47,7 +45,7 @@ namespace NNFromScratch.Core.Layers
                     sum += this.PreviousLayer.NeuronValues[j] * this.Weights[index + j];
                 }
                 this.NeuronValues[idx] = ActivationFunctions.Activation(sum + this.Biases[idx], this.ActivationFunction);
-            });
+            };
         }
 
         public override void Load(BinaryReader br)
@@ -65,9 +63,9 @@ namespace NNFromScratch.Core.Layers
             Console.WriteLine($"Dense Layer of {Size} Neurons and {Weights.Length} Weights");
         }
 
-        public override void Initialize(BaseLayer previousLayer)
+        public override void Initialize()
         {
-            LayerInitialisationHelper.InitializeLayer(this, previousLayer);
+            LayerInitialisationHelper.InitializeLayer(this);
         }
 
         public override void InitializeCuda(int index)

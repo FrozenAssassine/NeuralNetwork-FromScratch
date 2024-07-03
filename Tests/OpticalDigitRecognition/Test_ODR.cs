@@ -14,7 +14,7 @@ public class Test_ODR
         bool train = true;
 
         //var imageData = MNistLoader.LoadFromFile(".\\datasets\\train-images.idx3-ubyte", ".\\datasets\\train-labels.idx1-ubyte");
-        var imageData = MNistLoader.LoadFromFile(".\\datasets\\old\\t10k-images.idx3-ubyte", ".\\datasets\\old\\t10k-labels.idx1-ubyte");
+        var imageData = MNistLoader.LoadFromFile(".\\datasets\\t10k-images.idx3-ubyte", ".\\datasets\\t10k-labels.idx1-ubyte");
         int[] digits = new int[imageData.y.Length];
         int imageWidth = imageData.imageWidth;
         int imageHeight = imageData.imageHeight;
@@ -25,18 +25,19 @@ public class Test_ODR
             .Stack(new DenseLayer(128, ActivationType.Sigmoid))
             .Stack(new DenseLayer(64, ActivationType.Sigmoid))
             .Stack(new OutputLayer(10))
-            .Build();
+            .Build(true);
 
         if (train)
         {
-            //network.Load("D:\\odr1.cool");
+            network.Summary();
+            //network.Load("D:\\odr.cool");
             network.Train(imageData.x, imageData.y, epochs: 4, learningRate: 0.1f, 1000, true);
 
             Console.WriteLine(BenchmarkExtension.Benchmark(() =>
             {
                 network.Evaluate(imageData.x, imageData.y, false);
             }));
-            network.Save("D:\\odr.cool");
+            //network.Save("D:\\odr.cool");
         }
 
         if (!train)

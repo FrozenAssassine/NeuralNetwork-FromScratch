@@ -1,6 +1,5 @@
 ﻿using NNFromScratch.Core.Layers;
 using NNFromScratch.Helper;
-using System.Security.Cryptography;
 
 namespace NNFromScratch.Core;
 
@@ -13,18 +12,20 @@ internal class NeuralNetwork
         this.allLayer = layers;
         for (int i = 0; i<allLayer.Length; i++)
         {
-            allLayer[i].Initialize(allLayer[i-1]);
-
-            allLayer[i].NextLayer = i + 1 >= allLayer.Length ? null : allLayer[i + 1];
+            allLayer[i].NextLayer = i + 1 < allLayer.Length ? allLayer[i + 1] : null;
             allLayer[i].PreviousLayer = i - 1 < 0 ? null : allLayer[i - 1];
+            
+            allLayer[i].Initialize();
         }
     }
 
     public void Train_CPU(float[] inputs, float[] desired, float learningRate)
     {
-        foreach(var item in allLayer)
+        FeedForward_CPU(inputs);
+
+        for(int i = allLayer.Length - 1; i >= 0; i--)
         {
-            item.Train(desired, learningRate);
+            allLayer[i].Train(desired, learningRate);
         }
     }
 
@@ -40,7 +41,7 @@ internal class NeuralNetwork
             item.FeedForward();
         }
 
-        return allLayer[^1].NeuronValues;
+        return allLayer[allLayer.Length - 1].NeuronValues;
     }
 
     public void Save(Stream stream)
