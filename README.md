@@ -30,8 +30,14 @@ At the current point I would not recommend this in any production environment, f
 | 100 images, 150x150x3 (67500 inputs, 1024 hidden, 512 hidden, 256 hidden, 6 outputs) | 6.472 sec | 9.514 sec | 34.472 sec
 | 100 images, 150x150x3 (67500 inputs, 2048 hidden, 1024 hidden, 6 outputs) | 6.832 sec | 9.426 sec | 31.467 sec
 
-  
-## 🚀 Get Started
+## 🚀 Performance History
+The initial Optical Digit Recognition (ODR) implementation, using 28x28 black-and-white images as input with a neural network consisting of 128 and 64 hidden neurons and 10 output neurons, took 2.8 seconds to train on 1000 images.  
+To improve performance, I added **Parallel.For** support, which accelerated the training process. Enabling Release mode further optimized the training time, reducing it to around 780ms for 1000 images.   
+However, this was not sufficient. I began integrating CUDA support, which proved challenging but significantly reduced the training time. With CUDA, I brought the training time down to 400ms for 1000 images. In the latest build, I achieved a training time of approximately 200ms per 1000 images.   
+Overall, this resulted in a 10-fold increase in performance.
+
+
+## 🏗️ Get Started
 1. Clone the repository.
 2. Ensure you have the necessary dependencies for C# and CUDA development.
    (https://developer.nvidia.com/cuda-downloads)
