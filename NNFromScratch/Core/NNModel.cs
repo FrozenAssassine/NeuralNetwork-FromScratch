@@ -1,5 +1,6 @@
 ﻿using NNFromScratch.Core.Layers;
 using NNFromScratch.Helper;
+using SixLabors.ImageSharp.Formats;
 using System.Diagnostics;
 using System.Reflection.Emit;
 
@@ -102,21 +103,23 @@ public class NNModel
                 {
                     int percent = inputs.Length / 100 * evaluatePercent;
                     accuracys[e] = percent;
-                    Evaluate(inputs.Take(percent).ToArray(), desired.Take(percent).ToArray(), false);
+                    Evaluate(inputs.Take(percent).ToArray(), desired.Take(percent).ToArray(), useCuda);
                 }
 
                 if (e != epochs - 1)
                     Console.WriteLine(new string('-', 50));
             }
         });
-        //important to free memory from gpu
-        if (useCuda)
-            CudaAccel.DoneTraining();
-
         Console.WriteLine(new string('=', 50) + "\n");
         Console.WriteLine($"Training took: {trainingTime}\n");
 
         return accuracys;
+    }
+
+    public void Close()
+    {
+        if (useCuda)
+            CudaAccel.DoneTraining();
     }
 
     public void Save(string path)
@@ -138,13 +141,27 @@ public class NNModel
     }
 
     //only use cuda evaluation while training, because gpu memory gets freed after training
-    public (float percent, int count, int correct) Evaluate(float[][] x, float[][] y, bool useCuda, bool output = true)
+    public (float percent, int count, int correct) Evaluate(float[][] x, float[][] y, bool predictOnCuda = true, bool output = true)
     {
         int correct = 0;
-        for (int i = 0; i < x.Length; i++)
+
+        if (predictOnCuda && this.useCuda)
         {
-            if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(nn.FeedForward_CPU(x[i])))
-                correct++;
+            for (int i = 0; i < x.Length; i++)
+            {
+                float[] prediction = new float[this.layers[^1].Size];
+                CudaAccel.Predict(x[i], prediction);
+                if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(prediction))
+                    correct++;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < x.Length; i++)
+            {
+                if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(nn.FeedForward_CPU(x[i])))
+                    correct++;
+            }
         }
 
         float accuracy = (float)correct / x.Length;

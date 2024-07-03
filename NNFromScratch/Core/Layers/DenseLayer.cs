@@ -36,8 +36,7 @@ namespace NNFromScratch.Core.Layers
 
         public override void FeedForward()
         {
-            for(int idx  =0; idx< this.Size; idx++)
-            {
+            Parallel.For(0, this.Size, (idx) => {
                 float sum = 0.0f;
                 int index = idx * this.PreviousLayer.Size;
                 for (int j = 0; j < this.PreviousLayer.Size; j++)
@@ -45,7 +44,7 @@ namespace NNFromScratch.Core.Layers
                     sum += this.PreviousLayer.NeuronValues[j] * this.Weights[index + j];
                 }
                 this.NeuronValues[idx] = ActivationFunctions.Activation(sum + this.Biases[idx], this.ActivationFunction);
-            };
+            });
         }
 
         public override void Load(BinaryReader br)
@@ -70,7 +69,7 @@ namespace NNFromScratch.Core.Layers
 
         public override void InitializeCuda(int index)
         {
-            CudaAccel.InitHiddenLayer(index, this.PreviousLayer.Size, this.Size, this.Biases, this.Weights, this.NeuronValues, this.Errors, this.ActivationFunction);
+            CudaAccel.InitDenseLayer(index, this.PreviousLayer.Size, this.Size, this.Biases, this.Weights, this.NeuronValues, this.Errors, this.ActivationFunction);
         }
     }
 }

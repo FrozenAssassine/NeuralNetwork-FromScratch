@@ -70,6 +70,18 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desired, int s
     CUDA_CHECK(err, "Sync Training Threads");
 }
 
+//Predictions only work while training on the gpu, otherwise the data is not copied to the gpu memory.
+extern "C" __declspec(dllexport) float* Predict(float* data, float* prediction) {
+
+    cudaError_t err = cudaMemcpy(gpu_allLayer[0]->NeuronValues, data, cpu_allLayer[0]->Size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Memcpy Inputs for Prediction");
+
+    FeedForward();
+
+    BaseLayer * outLayer = gpu_allLayer[allLayerCount - 1];
+    cudaMemcpy(prediction, outLayer->NeuronValues, sizeof(outLayer->Size) * sizeof(float), cudaMemcpyDeviceToHost);
+}
+
 extern "C" __declspec(dllexport) void Init(int totalLayers) {
     printf("Training on CUDA is enabled\n");
     cudaDeviceProp prop;

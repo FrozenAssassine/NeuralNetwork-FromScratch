@@ -11,8 +11,6 @@ public class Test_ODR
 {
     public static void Run()
     {
-        bool train = true;
-
         //var imageData = MNistLoader.LoadFromFile(".\\datasets\\train-images.idx3-ubyte", ".\\datasets\\train-labels.idx1-ubyte");
         var imageData = MNistLoader.LoadFromFile(".\\datasets\\t10k-images.idx3-ubyte", ".\\datasets\\t10k-labels.idx1-ubyte");
         int[] digits = new int[imageData.y.Length];
@@ -27,23 +25,17 @@ public class Test_ODR
             .Stack(new OutputLayer(10))
             .Build(true);
 
-        if (train)
-        {
-            network.Summary();
-            //network.Load("D:\\odr.cool");
-            network.Train(imageData.x, imageData.y, epochs: 4, learningRate: 0.1f, 1000, true);
+        network.Summary();
+        //network.Load("D:\\odr.cool");
+        network.Train(imageData.x, imageData.y, epochs: 4, learningRate: 0.1f, 1000, true);
+        network.Close();
 
-            Console.WriteLine(BenchmarkExtension.Benchmark(() =>
-            {
-                network.Evaluate(imageData.x, imageData.y, false);
-            }));
-            //network.Save("D:\\odr.cool");
-        }
-
-        if (!train)
+        Console.WriteLine(BenchmarkExtension.Benchmark(() =>
         {
-            //network.Load("D:\\odr.cool");
-        }
+            network.Evaluate(imageData.x, imageData.y, false);
+        }));
+        //network.Save("D:\\odr.cool");
+
     }
 
     //returns 0 for all colors and 1 for all black colors with alpha of exactly 255
