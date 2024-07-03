@@ -4,13 +4,13 @@ namespace NNFromScratch.Core
 {
     public class NetworkBuilder
     {
-        private List<NeuronLayer> layers = new();
+        private List<BaseLayer> layers = new();
         public static NetworkBuilder Create()
         {
             return new NetworkBuilder();
         }
 
-        public NetworkBuilder Stack(NeuronLayer layer)
+        public NetworkBuilder Stack(BaseLayer layer)
         {
             layers.Add(layer);
             return this;
@@ -18,7 +18,7 @@ namespace NNFromScratch.Core
 
         public NNModel Build(bool useCuda = true)
         {
-            return new NNModel(layers.ToArray<NeuronLayer>(), useCuda);
+            return new NNModel(layers.ToArray<BaseLayer>(), useCuda);
         }
     }
 }

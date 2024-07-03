@@ -33,9 +33,9 @@ namespace Tests.SceneClassification
 
             var network = NetworkBuilder.Create()
                 .Stack(new InputLayer(ImageWidth * ImageHeight * PixelDepth))
-                .Stack(new NeuronLayer(1024, ActivationType.Relu))
-                .Stack(new NeuronLayer(512, ActivationType.Relu))
-                .Stack(new NeuronLayer(256, ActivationType.Relu))
+                .Stack(new DenseLayer(1024, ActivationType.Relu))
+                .Stack(new DenseLayer(512, ActivationType.Relu))
+                .Stack(new DenseLayer(256, ActivationType.Relu))
                 .Stack(new OutputLayer(OutputTypes, ActivationType.Softmax))
                 .Build();
 

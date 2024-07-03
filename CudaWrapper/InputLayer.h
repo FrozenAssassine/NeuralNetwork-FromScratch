@@ -1,7 +1,7 @@
 #pragma once
-#include "BaseLayer.h"
+#include "DenseLayer.h"
 
-class InputLayer : public BaseLayer
+class InputLayer : public DenseLayer
 {
 public:
 	void FeedForward(int threadsPerBlock) override;

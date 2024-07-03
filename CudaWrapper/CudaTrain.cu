@@ -8,7 +8,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#include "BaseLayer.h"
+#include "DenseLayer.h"
 #include "InputLayer.h"
 #include "OutputLayer.h"
 
@@ -22,13 +22,13 @@
 
 const int threadsPerBlock = 256;
 
-BaseLayer** gpu_allLayer = nullptr;
-BaseLayer** cpu_allLayer = nullptr;
+DenseLayer** gpu_allLayer = nullptr;
+DenseLayer** cpu_allLayer = nullptr;
 int allLayerCount;
 
 float * gpu_desiredValues;
 
-void PrintLayerInfo(BaseLayer * layer, const char* layerName) {
+void PrintLayerInfo(DenseLayer * layer, const char* layerName) {
     printf("%s - Weights: %p, Biases: %p, NeuronValues: %p, Errors: %p, Size: %d\n",
         layerName, layer->Weights, layer->Biases, layer->NeuronValues, layer->Errors, layer->Size);
 }
@@ -77,8 +77,8 @@ extern "C" __declspec(dllexport) void Init(int totalLayers) {
     allLayerCount = totalLayers;
 
     // Allocate memory for cpu_allLayer array on the host
-    cpu_allLayer = new BaseLayer * [totalLayers];
-    gpu_allLayer = new BaseLayer * [totalLayers];
+    cpu_allLayer = new DenseLayer * [totalLayers];
+    gpu_allLayer = new DenseLayer * [totalLayers];
 
     // Initialize layers to null
     for (int i = 0; i < totalLayers; ++i) {
@@ -94,7 +94,7 @@ extern "C" __declspec(dllexport) bool CheckCuda() {
     return deviceCount >= 1;
 }
 
-void AllocateLayerMemory(BaseLayer* gpuLayer, BaseLayer* cpuLayer, int prevSize, int size, float* biases, float* weights, float* neuronValues, float* errors) {
+void AllocateLayerMemory(DenseLayer* gpuLayer, DenseLayer* cpuLayer, int prevSize, int size, float* biases, float* weights, float* neuronValues, float* errors) {
     cudaError_t err;
 
     // Assign host pointers
@@ -147,7 +147,7 @@ void InitNextLayers() {
     }
 }
 
-void FillLayer(BaseLayer* cpuLayer, BaseLayer* gpuLayer, int layerIndex, int size, int activation) {
+void FillLayer(DenseLayer* cpuLayer, DenseLayer* gpuLayer, int layerIndex, int size, int activation) {
     if (layerIndex == allLayerCount - 1) {
         InitNextLayers();
     }
@@ -172,8 +172,8 @@ extern "C" __declspec(dllexport) void InitInputLayer(
     gpu_allLayer[layerIndex] = new InputLayer();
     cpu_allLayer[layerIndex] = new InputLayer();
 
-    BaseLayer* cpuLayer = cpu_allLayer[layerIndex];
-    BaseLayer* gpuLayer = gpu_allLayer[layerIndex];
+    DenseLayer* cpuLayer = cpu_allLayer[layerIndex];
+    DenseLayer* gpuLayer = gpu_allLayer[layerIndex];
 
     FillLayer(cpuLayer, gpuLayer, layerIndex, size, activation);
     AllocateLayerMemory(gpuLayer, cpuLayer, 0, size, biases, weights, neuronValues, errors);
@@ -193,8 +193,8 @@ extern "C" __declspec(dllexport) void InitOutputLayer(
     gpu_allLayer[layerIndex] = new OutputLayer();
     cpu_allLayer[layerIndex] = new OutputLayer();
 
-    BaseLayer* cpuLayer = cpu_allLayer[layerIndex];
-    BaseLayer* gpuLayer = gpu_allLayer[layerIndex];
+    DenseLayer* cpuLayer = cpu_allLayer[layerIndex];
+    DenseLayer* gpuLayer = gpu_allLayer[layerIndex];
 
     FillLayer(cpuLayer, gpuLayer, layerIndex, size, activation);
     AllocateLayerMemory(gpuLayer, cpuLayer, prevSize, size, biases, weights, neuronValues, errors);
@@ -211,11 +211,11 @@ extern "C" __declspec(dllexport) void InitHiddenLayer(
     float* errors, 
     int activation) 
 {
-    gpu_allLayer[layerIndex] = new BaseLayer();
-    cpu_allLayer[layerIndex] = new BaseLayer();
+    gpu_allLayer[layerIndex] = new DenseLayer();
+    cpu_allLayer[layerIndex] = new DenseLayer();
 
-    BaseLayer* cpuLayer = cpu_allLayer[layerIndex];
-    BaseLayer* gpuLayer = gpu_allLayer[layerIndex];
+    DenseLayer* cpuLayer = cpu_allLayer[layerIndex];
+    DenseLayer* gpuLayer = gpu_allLayer[layerIndex];
 
     FillLayer(cpuLayer, gpuLayer, layerIndex, size, activation);
     AllocateLayerMemory(gpuLayer, cpuLayer, prevSize, size, biases, weights, neuronValues, errors);
@@ -225,7 +225,7 @@ extern "C" __declspec(dllexport) void InitHiddenLayer(
 extern "C" __declspec(dllexport) void Cleanup() {
     //free the memory of every layer from the gpu
     for (int i = 0; i < allLayerCount; i++) {
-        BaseLayer* gpuLayer = gpu_allLayer[i];
+        DenseLayer* gpuLayer = gpu_allLayer[i];
 
         if (gpuLayer) {
             cudaFree(gpuLayer->Biases);
@@ -245,8 +245,8 @@ extern "C" __declspec(dllexport) void DoneTraining() {
 
     // Copy updated weights and biases back to the host
     for (int i = 0; i < allLayerCount; i++) {
-        BaseLayer* gpuLayer = gpu_allLayer[i];
-        BaseLayer* cpuLayer = cpu_allLayer[i];
+        DenseLayer* gpuLayer = gpu_allLayer[i];
+        DenseLayer* cpuLayer = cpu_allLayer[i];
 
         //copy back all layers:
         err = cudaMemcpy(cpuLayer->Biases, gpuLayer->Biases, gpuLayer->Size * sizeof(float), cudaMemcpyDeviceToHost);

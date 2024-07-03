@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="CudaTrain.cu" />
-    <CudaCompile Include="BaseLayer.cu">
+    <CudaCompile Include="DenseLayer.cu">
       <Filter>Layer</Filter>
     </CudaCompile>
     <CudaCompile Include="OutputLayer.cu">
@@ -23,7 +23,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BaseLayer.h">
+    <ClInclude Include="DenseLayer.h">
       <Filter>Layer</Filter>
     </ClInclude>
     <ClInclude Include="InputLayer.h">

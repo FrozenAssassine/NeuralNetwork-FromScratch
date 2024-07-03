@@ -4,7 +4,7 @@
 #include "ActivationFunctions.h"
 #include <iostream>
 
-/*__global__ void ff_outputValues(BaseLayer* outputLayer, int size) {
+/*__global__ void ff_outputValues(DenseLayer* outputLayer, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float sum = 0.0f;
@@ -35,7 +35,7 @@ __global__ void output_Errors(float * errors, float * neuronValues, float* desir
     }
 }
 
-/*__global__ void output_WeightsBiases(BaseLayer* output, float learningRate, int size) {
+/*__global__ void output_WeightsBiases(DenseLayer* output, float learningRate, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float derivNeuronVal = learningRate * output->Errors[idx] * ActivationFunctions::ActivationDeriv(output->NeuronValues[idx], output->Activation);

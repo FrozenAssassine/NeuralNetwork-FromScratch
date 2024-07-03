@@ -21,8 +21,8 @@ internal class MinecraftSkinCreator
 
         var model= NetworkBuilder.Create()
             .Stack(new InputLayer(1))
-            .Stack(new NeuronLayer(512, ActivationType.Sigmoid))
-            .Stack(new NeuronLayer(512, ActivationType.Sigmoid))
+            .Stack(new DenseLayer(512, ActivationType.Sigmoid))
+            .Stack(new DenseLayer(512, ActivationType.Sigmoid))
             .Stack(new OutputLayer(imageWidth * imageHeight * 4, ActivationType.Sigmoid))
             .Build();
 

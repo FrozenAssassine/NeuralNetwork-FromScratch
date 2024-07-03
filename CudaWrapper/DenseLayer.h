@@ -1,9 +1,9 @@
 #pragma once
-class BaseLayer
+class DenseLayer
 {
 public:
-	BaseLayer* previousLayer;
-	BaseLayer* nextLayer;
+	DenseLayer* previousLayer;
+	DenseLayer* nextLayer;
 	float* Weights;
 	float* Biases;
 	float* Errors;

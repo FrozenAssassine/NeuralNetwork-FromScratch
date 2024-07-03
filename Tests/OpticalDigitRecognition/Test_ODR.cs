@@ -11,10 +11,10 @@ public class Test_ODR
 {
     public static void Run()
     {
-        bool train = true;        
+        bool train = true;
 
         //var imageData = MNistLoader.LoadFromFile(".\\datasets\\train-images.idx3-ubyte", ".\\datasets\\train-labels.idx1-ubyte");
-        var imageData = MNistLoader.LoadFromFile(".\\datasets\\t10k-images.idx3-ubyte", ".\\datasets\\t10k-labels.idx1-ubyte");
+        var imageData = MNistLoader.LoadFromFile(".\\datasets\\old\\t10k-images.idx3-ubyte", ".\\datasets\\old\\t10k-labels.idx1-ubyte");
         int[] digits = new int[imageData.y.Length];
         int imageWidth = imageData.imageWidth;
         int imageHeight = imageData.imageHeight;
@@ -22,8 +22,8 @@ public class Test_ODR
         //create the neural network:
         var network = NetworkBuilder.Create()
             .Stack(new InputLayer(imageWidth * imageHeight))
-            .Stack(new NeuronLayer(128, ActivationType.Sigmoid))
-            .Stack(new NeuronLayer(64, ActivationType.Sigmoid))
+            .Stack(new DenseLayer(128, ActivationType.Sigmoid))
+            .Stack(new DenseLayer(64, ActivationType.Sigmoid))
             .Stack(new OutputLayer(10))
             .Build();
 
@@ -91,7 +91,6 @@ public class Test_ODR
                 Console.WriteLine($"\t {i}: {MathF.Round(pred, 4)}");
             }
         }
-
 
         Console.WriteLine($"Provided image is {maxIndex} with probability {prediction[maxIndex]}; Took {time}");
     }

@@ -1,4 +1,4 @@
-#include "BaseLayer.h"
+#include "DenseLayer.h"
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-/*__global__ void hidden_ErrorWeight(BaseLayer* current, float learningRate, int size) {
+/*__global__ void hidden_ErrorWeight(DenseLayer* current, float learningRate, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float err = 0.0f;
@@ -62,7 +62,7 @@ __global__ void hidden_ErrorWeight(
     }
 }
 
-/* __global__ void ff_hiddenValues2(BaseLayer* current, int size) {
+/* __global__ void ff_hiddenValues2(DenseLayer* current, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
         float sum = 0.0f;
@@ -86,7 +86,7 @@ __global__ void ff_hiddenValues(int prevSize, float * prevNeuronVal, float * cur
     }
 }
 
-void BaseLayer::FeedForward(int threadsPerBlock) {
+void DenseLayer::FeedForward(int threadsPerBlock) {
 
     int blocks = (this->Size + threadsPerBlock - 1) / threadsPerBlock;
     ff_hiddenValues << < blocks, threadsPerBlock >> > (
@@ -100,7 +100,7 @@ void BaseLayer::FeedForward(int threadsPerBlock) {
         );
 }
 
-void BaseLayer::Train(int threadsPerBlock, float* desiredValues, float learningRate) {
+void DenseLayer::Train(int threadsPerBlock, float* desiredValues, float learningRate) {
     int errorBlocks = (this->Size + threadsPerBlock - 1) / threadsPerBlock;
 
     hidden_ErrorWeight << < errorBlocks, threadsPerBlock >> > (
