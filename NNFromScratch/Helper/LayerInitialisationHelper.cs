@@ -1,4 +1,5 @@
 ﻿using NNFromScratch.Core.Layers;
+using System.Numerics;
 
 namespace NNFromScratch.Helper;
 
@@ -9,7 +10,7 @@ internal class LayerInitialisationHelper
         //Maybe use "Xavier Initialization" ref: Finn Chat DC
         for (int i = 0; i < biases.Length; i++)
         {
-            biases[i] = MathHelper.RandomBias();
+            biases[i] = MathHelper.RandomFloat1_1();
         }
 
         if (weights == null)
@@ -17,7 +18,7 @@ internal class LayerInitialisationHelper
 
         for (int i = 0; i < weights.Length; i++)
         {
-            weights[i] = MathHelper.RandomWeight();
+            weights[i] = MathHelper.RandomFloat1_1();
         }
     }
     

@@ -80,6 +80,7 @@
   <ItemGroup>
     <CudaCompile Include="DenseLayer.cu" />
     <CudaCompile Include="CudaTrain.cu" />
+    <CudaCompile Include="LSTMLayer.cu" />
     <CudaCompile Include="OutputLayer.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +88,7 @@
     <ClInclude Include="BaseLayer.h" />
     <ClInclude Include="InputLayer.h" />
     <ClInclude Include="DenseLayer.h" />
+    <ClInclude Include="LSTMLayer.h" />
     <ClInclude Include="OutputLayer.h" />
   </ItemGroup>
   <ItemGroup>

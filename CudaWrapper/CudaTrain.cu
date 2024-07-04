@@ -11,9 +11,9 @@
 #include "DenseLayer.h"
 #include "InputLayer.h"
 #include "OutputLayer.h"
+#include "LSTMLayer.h"
 #include "BaseLayer.h"
-
-#define DEBUG
+//#define DEBUG
 
 #define CUDA_CHECK(err, code) \
     if (err != cudaSuccess) { \
@@ -234,6 +234,133 @@ extern "C" __declspec(dllexport) void InitDenseLayer(
     AllocateLayerMemory(gpuLayer, cpuLayer, prevSize, size, biases, weights, neuronValues, errors);
 }
 
+extern "C" __declspec(dllexport) void InitLSTMLayer(
+    int layerIndex,
+    int prevSize,
+    int size,
+    float* biases,
+    float* neuronValues,
+    float* errors,
+    float* WeightsInput,
+    float* WeightsForget,
+    float* WeightsOutput,
+    float* WeightsCandidate,
+    float* CellState,
+    float* OutputGate,
+    float* ForgetGate,
+    float* InputGate,
+    float* CandidateCellState,
+    float* inputGateGradients,
+    float* forgetGateGradients,
+    float* outputGradients,
+    float* candidateCellGradients
+)
+{
+    LSTMLayer* cpu_layer = new LSTMLayer();
+    LSTMLayer* gpu_layer = new LSTMLayer();
+
+    gpu_allLayer[layerIndex] = gpu_layer;
+    cpu_allLayer[layerIndex] = cpu_layer;
+
+    FillLayer(cpu_layer, gpu_layer, layerIndex, size, 0);
+    AllocateLayerMemory(gpu_layer, cpu_layer, 0, size, biases, 0, neuronValues, errors);
+
+    //allocate lstm memory:
+
+    //all weights
+    cudaError_t err = cudaMalloc(&gpu_layer->WeightsInput, size * prevSize * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU WeightsInput");
+    err = cudaMemcpy(gpu_layer->WeightsInput, WeightsInput, size * prevSize * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying WeightsInput to GPU");
+
+    err = cudaMalloc(&gpu_layer->WeightsForget, size * prevSize * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU WeightsForget");
+    err = cudaMemcpy(gpu_layer->WeightsForget, WeightsForget, size * prevSize * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying WeightsForget to GPU");
+
+    err = cudaMalloc(&gpu_layer->WeightsOutput, size * prevSize * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU WeightsOutput");
+    err = cudaMemcpy(gpu_layer->WeightsOutput, WeightsOutput, size * prevSize * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying WeightsOutput to GPU");
+
+    err = cudaMalloc(&gpu_layer->WeightsCandidate, size * prevSize * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU WeightsCandidate");
+    err = cudaMemcpy(gpu_layer->WeightsCandidate, WeightsCandidate, size * prevSize * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying WeightsCandidate to GPU");
+
+    //gradients:
+    err = cudaMalloc(&gpu_layer->inputGateGradients, size * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU inputGateGradients");
+    err = cudaMemcpy(gpu_layer->inputGateGradients, inputGateGradients, size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying inputGateGradients to GPU");
+    
+    err = cudaMalloc(&gpu_layer->forgetGateGradients, size * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU forgetGateGradients");
+    err = cudaMemcpy(gpu_layer->forgetGateGradients, forgetGateGradients, size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying forgetGateGradients to GPU");
+
+    err = cudaMalloc(&gpu_layer->outputGradients, size * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU outputGradients");
+    err = cudaMemcpy(gpu_layer->outputGradients, outputGradients, size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying outputGradients to GPU");
+
+    err = cudaMalloc(&gpu_layer->candidateCellGradients, size * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU candidateCellGradients");
+    err = cudaMemcpy(gpu_layer->candidateCellGradients, candidateCellGradients, size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying candidateCellGradients to GPU");
+
+    err = cudaMalloc(&gpu_layer->CellState, size * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU CellState");
+    err = cudaMemcpy(gpu_layer->CellState, CellState, size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying CellState to GPU");
+
+    err = cudaMalloc(&gpu_layer->OutputGate, size * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU OutputGate");
+    err = cudaMemcpy(gpu_layer->OutputGate, OutputGate, size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying OutputGate to GPU");
+
+    err = cudaMalloc(&gpu_layer->ForgetGate, size * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU ForgetGate");
+    err = cudaMemcpy(gpu_layer->ForgetGate, ForgetGate, size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying ForgetGate to GPU");
+
+    err = cudaMalloc(&gpu_layer->InputGate, size * sizeof(float));
+    CUDA_CHECK(err, "Allocating GPU InputGate");
+    err = cudaMemcpy(gpu_layer->InputGate, InputGate, size * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_CHECK(err, "Copying InputGate to GPU");
+}
+
+extern "C" __declspec(dllexport) void DoneLSTMLayer(int index) {
+    cudaError_t err;
+
+    LSTMLayer* gpuLayer = dynamic_cast<LSTMLayer*>(gpu_allLayer[index]);
+    LSTMLayer* cpuLayer = dynamic_cast<LSTMLayer*>(cpu_allLayer[index]);
+
+    unsigned long long size = gpuLayer->Size* gpuLayer->previousLayer->Size * sizeof(float);
+
+    err = cudaMemcpy(cpuLayer->WeightsCandidate, gpuLayer->WeightsCandidate, size, cudaMemcpyDeviceToHost);
+    CUDA_CHECK(err, "10");
+    err = cudaMemcpy(cpuLayer->WeightsForget, gpuLayer->WeightsForget, size, cudaMemcpyDeviceToHost);
+    CUDA_CHECK(err, "11");
+    err = cudaMemcpy(cpuLayer->WeightsInput, gpuLayer->WeightsInput, size, cudaMemcpyDeviceToHost);
+    CUDA_CHECK(err, "12");
+    err = cudaMemcpy(cpuLayer->WeightsOutput, gpuLayer->WeightsOutput, size, cudaMemcpyDeviceToHost);
+    CUDA_CHECK(err, "12");
+
+    cudaFree(gpuLayer->WeightsCandidate);
+    cudaFree(gpuLayer->WeightsForget);
+    cudaFree(gpuLayer->WeightsInput);
+    cudaFree(gpuLayer->WeightsOutput);
+    cudaFree(gpuLayer->CellState);
+    cudaFree(gpuLayer->OutputGate);
+    cudaFree(gpuLayer->ForgetGate);
+    cudaFree(gpuLayer->InputGate);
+    cudaFree(gpuLayer->CandidateCellState);
+    cudaFree(gpuLayer->inputGateGradients);
+    cudaFree(gpuLayer->forgetGateGradients);
+    cudaFree(gpuLayer->outputGradients);
+    cudaFree(gpuLayer->candidateCellGradients);
+}
 
 extern "C" __declspec(dllexport) void Cleanup() {
     //free the memory of every layer from the gpu
@@ -278,6 +405,11 @@ extern "C" __declspec(dllexport) void DoneTraining() {
             printf("SIZE: (%d), %d\n", i, (gpuLayer->Size * gpu_allLayer[i - 1]->Size));
 #endif // DEBUG
         }
+
+        //finish LSTM layer:
+        if (LSTMLayer* d1 = dynamic_cast<LSTMLayer*>(gpuLayer))
+            DoneLSTMLayer(i);
+
 #ifdef DEBUG
         printf("MemoryAdress: %d, %p, %p, %p, %p\n", i, cpuLayer->Weights, cpuLayer->Biases, cpuLayer->Errors, cpuLayer->NeuronValues);
 #endif // DEBUG

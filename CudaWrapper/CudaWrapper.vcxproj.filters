@@ -8,6 +8,9 @@
     <CudaCompile Include="OutputLayer.cu">
       <Filter>Layer</Filter>
     </CudaCompile>
+    <CudaCompile Include="LSTMLayer.cu">
+      <Filter>Layer</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Layer">
@@ -36,6 +39,9 @@
       <Filter>Tools</Filter>
     </ClInclude>
     <ClInclude Include="BaseLayer.h">
+      <Filter>Layer</Filter>
+    </ClInclude>
+    <ClInclude Include="LSTMLayer.h">
       <Filter>Layer</Filter>
     </ClInclude>
   </ItemGroup>

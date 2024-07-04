@@ -3,14 +3,14 @@
 public class MathHelper
 {
     private static Random random = new Random();
-    public static float RandomWeight()
+
+    public static float RandomFloat1_1()
     {
         return (random.NextSingle() * 2) - 1;
     }
-
-    public static float RandomBias()
+    public static float RandomFloat0_1()
     {
-        return (random.NextSingle() * 2) - 1;
+        return random.NextSingle();
     }
 
     public static int GetMaximumIndex(float[] items)
