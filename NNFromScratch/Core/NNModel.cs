@@ -110,16 +110,14 @@ public class NNModel
                     Console.WriteLine(new string('-', 50));
             }
         });
+        
+        if (useCuda)
+            CudaAccel.DoneTraining();
+
         Console.WriteLine(new string('=', 50) + "\n");
         Console.WriteLine($"Training took: {trainingTime}\n");
 
         return accuracys;
-    }
-
-    public void Close()
-    {
-        if (useCuda)
-            CudaAccel.DoneTraining();
     }
 
     public void Save(string path)

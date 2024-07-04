@@ -21,7 +21,7 @@
         exit(EXIT_FAILURE);\
     }
 
-const int threadsPerBlock = 256;
+const int threadsPerBlock = 64;
 
 BaseLayer** gpu_allLayer = nullptr;
 BaseLayer** cpu_allLayer = nullptr;
@@ -250,7 +250,7 @@ extern "C" __declspec(dllexport) void Cleanup() {
 
     cudaFree(gpu_desiredValues);
     delete[] gpu_allLayer;
-    delete[] cpu_allLayer;
+    //delete[] cpu_allLayer;
 }
 
 extern "C" __declspec(dllexport) void DoneTraining() {

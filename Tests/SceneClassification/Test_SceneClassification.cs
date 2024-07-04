@@ -12,7 +12,7 @@ namespace Tests.SceneClassification
         const int ImageWidth = 150;
         const int ImageHeight = 150;
         const int PixelDepth = 3; //rgb
-        const int ImageCount = 1000; //total of 24335 images
+        const int ImageCount = 1000; //total of 17033 images
         const int OutputTypes = 6; //Buildings, Forests, Mountains, Glacier, Street, Sea
         public static void Run()
         {
@@ -41,11 +41,11 @@ namespace Tests.SceneClassification
 
             //network.Load("D:\\imageclassification.cool");
 
-            network.Train(images, desired, 1,0.1f);
+            network.Train(images, desired, 2,0.1f);
             Console.WriteLine("Press enter to Save");
             Console.ReadLine();
 
-            network.Save("D:\\imageclassification.cool");
+            //network.Save("D:\\imageclassification.cool");
 
             Random random = new Random();
 
