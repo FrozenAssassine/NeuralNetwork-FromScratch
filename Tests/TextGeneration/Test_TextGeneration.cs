@@ -13,25 +13,29 @@ namespace Tests.TextGeneration
 {
     internal class Test_TextGeneration
     {
-        const string datasetPath = "D:\\testnn\\text_generation\\train.txt";
-        const int WordsLength = 12;
+        const string datasetPath = ".\\datasets\\shakespeare.txt";
+        const int WordsLength = 50;
         const int VocabularySize = 256; //all ASCii characters
         const int MaxWordIndexBit = 13; //the number of bits for the arrays
-
+        const int Length = 100_000;
         public static void Run()
         {
             string text = File.ReadAllText(datasetPath);
-            text = text.Replace("\n", "").Replace("\r", "");
+            text = text.Remove(Length);
+
+            text = CleanUp(text);
             var words = text.Split(new char[] { '.', ' ', ':' }, StringSplitOptions.RemoveEmptyEntries);
 
             int textLength = words.Length;
 
             var tokenIndexTable = Tokenize(words);
             
-            Console.WriteLine("Number of unique words: " + tokenIndexTable.Count);
             int inputSize = textLength / WordsLength;
             int remaining = textLength % WordsLength;
 
+            Console.WriteLine("Number of unique words: " + tokenIndexTable.Count);
+            Console.WriteLine("Training size: " + inputSize);
+            
             if (remaining > 0){
                 textLength -= remaining;
                 inputSize -= 1;
@@ -40,7 +44,7 @@ namespace Tests.TextGeneration
             float[][] inputs = new float[inputSize][];
             float[][] targets = new float[inputSize][];
 
-            for (int i = 0; i < textLength - WordsLength; i += WordsLength)
+            for (int i = 0; i < textLength - WordsLength; i++)
             {
                 if (WordsLength + i > textLength - 1)
                     break;
@@ -75,17 +79,30 @@ namespace Tests.TextGeneration
                 .Stack(new OutputLayer(MaxWordIndexBit, ActivationType.Sigmoid))
                 .Build(false);
 
-// network.Load("D:\\textgeneration.cool");
+            //network.Load("D:\\textgeneration.cool");
 
             // Train the network
-            network.Train(inputs, targets, 40, 0.1f, 1000);
+            network.Train(inputs, targets, 20, 0.1f, 1000);
 
             // Save the trained model
             Console.WriteLine("Press enter to Save");
             Console.ReadLine();
-            network.Save("D:\\textgeneration.cool");
+            //network.Save("D:\\textgeneration.cool");
 
-            Predict(network, tokenIndexTable, "A sick man's appetite", 5);
+            Predict(network, tokenIndexTable, "A sick man's appetite", 1000);
+        }
+
+        private static string CleanUp(string text)
+        {
+            return text
+                .Replace("\n", "")
+                .Replace("\r", "")
+                .Replace(",", "")
+                .Replace(":", "")
+                .Replace(";", "")
+                .Replace("'ll", " will")
+                .Replace("'s", " is")
+                .Replace("n't", "not");
         }
 
         private static void Predict(NNModel model, Dictionary<string, int> tokenIndexTable, string seed, int words = 5)
@@ -95,9 +112,16 @@ namespace Tests.TextGeneration
 
             // Prepare the input sequence
             List<float> inputSequence = PrepareInputSequence(inputWords, tokenIndexTable);
-
+            StringBuilder sentence = new StringBuilder();
+            sentence.Append(seed + " ");
             for (int word = 0; word < words; word++)
             {
+                //remove word arrays from the beginning because of limited length
+                if(inputSequence.Count > WordsLength)
+                {
+                    inputSequence.RemoveRange(0, WordsLength);
+                }
+
                 float[] predictedBinary = model.Predict(inputSequence.ToArray());
 
                 //get the next word from the prediction:
@@ -113,8 +137,10 @@ namespace Tests.TextGeneration
 
                 inputSequence.AddRange(convertRes.binaryArray);
 
-                Console.WriteLine($"Predicted next word: {nextWord}");
+                sentence.Append(nextWord + " ");
             }
+
+            Console.WriteLine(sentence.ToString());
         }
 
         private static List<float> PrepareInputSequence(string[] words, Dictionary<string, int> tokenIndexTable)
