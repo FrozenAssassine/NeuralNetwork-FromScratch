@@ -1,4 +1,5 @@
 ﻿using NNFromScratch.Helper;
+using System.Numerics;
 
 namespace NNFromScratch.Core.Layers;
 
@@ -20,6 +21,8 @@ public class LSTMLayer : BaseLayer
     float[] inputGateGradients;
     float[] forgetGateGradients;
     float[] candidateCellGradients;
+    float[] PreviousCellState;
+    float[] PreviousNeuronValues;
 
     public LSTMLayer(int size)
     {
@@ -48,28 +51,45 @@ public class LSTMLayer : BaseLayer
             OutputGate[idx] = ActivationFunctions.Activation(outputGateSum, ActivationType.Sigmoid);
             CandidateCellState[idx] = ActivationFunctions.Activation(candidateCellSum, ActivationType.TanH);
 
-            CellState[idx] = CellState[idx] * ForgetGate[idx] + InputGate[idx] * CandidateCellState[idx];
+            CellState[idx] = PreviousCellState[idx] * ForgetGate[idx] + InputGate[idx] * CandidateCellState[idx];
             NeuronValues[idx] = ActivationFunctions.Activation(CellState[idx], ActivationType.TanH) * OutputGate[idx];
+
+            // Store current states for next time step
+            PreviousCellState[idx] = CellState[idx];
+            PreviousNeuronValues[idx] = NeuronValues[idx];
         });
     }
 
     public override void Train(float[] desiredValues, float learningRate)
     {
-        // Calculate the error at the output layer
-        for (int i = 0; i < Size; i++)
+        if (NextLayer == null)
         {
-            Errors[i] = i < desiredValues.Length ? desiredValues[i] - NeuronValues[i] : 0; // Only calculate error for indices up to VocabularySize
-            outputGradients[i] = Errors[i] * ActivationFunctions.Activation(CellState[i], ActivationType.TanH) * OutputGate[i] * (1 - OutputGate[i]);
+            for (int i = 0; i < Size; i++)
+            {
+                Errors[i] = i < desiredValues.Length ? desiredValues[i] - NeuronValues[i] : 0;
+            }
+        }
+        else
+        {
+            // If there is a next layer, propagate errors from the next layer
+            for (int i = 0; i < Size; i++)
+            {
+                Errors[i] = NextLayer.Errors[i]; // Use the propagated errors
+            }
         }
 
         // Backpropagate through the LSTM gates and cell state
         Parallel.For(0, Size, (idx) =>
         {
+            float tanhCellState = ActivationFunctions.Activation(CellState[idx], ActivationType.TanH);
+            outputGradients[idx] = Errors[idx] * tanhCellState * ActivationFunctions.ActivationDeriv(OutputGate[idx], ActivationType.Sigmoid);
+
             cellStateGradients[idx] = Errors[idx] * OutputGate[idx] * ActivationFunctions.ActivationDeriv(CellState[idx], ActivationType.TanH);
 
-            inputGateGradients[idx] = cellStateGradients[idx] * CandidateCellState[idx] * InputGate[idx] * (1 - InputGate[idx]);
-            forgetGateGradients[idx] = cellStateGradients[idx] * CellState[idx] * ForgetGate[idx] * (1 - ForgetGate[idx]);
+            inputGateGradients[idx] = cellStateGradients[idx] * CandidateCellState[idx] * ActivationFunctions.ActivationDeriv(InputGate[idx], ActivationType.Sigmoid);
+            forgetGateGradients[idx] = cellStateGradients[idx] * CellState[idx] * ActivationFunctions.ActivationDeriv(ForgetGate[idx], ActivationType.Sigmoid);
             candidateCellGradients[idx] = cellStateGradients[idx] * InputGate[idx] * ActivationFunctions.ActivationDeriv(CandidateCellState[idx], ActivationType.TanH);
+
         });
 
         // Update weights and biases
@@ -83,21 +103,59 @@ public class LSTMLayer : BaseLayer
                 WeightsCandidate[j * Size + idx] += learningRate * candidateCellGradients[idx] * PreviousLayer.NeuronValues[j];
             }
 
-            Biases[idx] += learningRate * Errors[idx];
+            Biases[idx] += learningRate * (
+                inputGateGradients[idx] + forgetGateGradients[idx] +
+                outputGradients[idx] + candidateCellGradients[idx]
+            );
         });
 
         // Update the errors for the previous layer
-        for (int i = 0; i < PreviousLayer.Size; i++)
+        Parallel.For(0, PreviousLayer.Size, (idx) =>
         {
-            PreviousLayer.Errors[i] = 0;
+            PreviousLayer.Errors[idx] = 0;
             for (int j = 0; j < Size; j++)
             {
-                PreviousLayer.Errors[i] += inputGateGradients[j] * WeightsInput[i * Size + j];
-                PreviousLayer.Errors[i] += forgetGateGradients[j] * WeightsForget[i * Size + j];
-                PreviousLayer.Errors[i] += outputGradients[j] * WeightsOutput[i * Size + j];
-                PreviousLayer.Errors[i] += candidateCellGradients[j] * WeightsCandidate[i * Size + j];
+                PreviousLayer.Errors[idx] += inputGateGradients[j] * WeightsInput[idx * Size + j];
+                PreviousLayer.Errors[idx] += forgetGateGradients[j] * WeightsForget[idx * Size + j];
+                PreviousLayer.Errors[idx] += outputGradients[j] * WeightsOutput[idx * Size + j];
+                PreviousLayer.Errors[idx] += candidateCellGradients[j] * WeightsCandidate[idx * Size + j];
             }
-        }
+        });
+    }
+
+    public override void Initialize()
+    {
+        Biases = new float[this.Size];
+        NeuronValues = new float[this.Size];
+        Errors = new float[this.Size];
+
+        CellState = new float[this.Size];
+        OutputGate = new float[this.Size];
+        ForgetGate = new float[this.Size];
+        InputGate = new float[this.Size];
+        CandidateCellState = new float[this.Size];
+
+        int weightsSize = this.PreviousLayer.Size * this.Size;
+        WeightsInput = new float[weightsSize];
+        WeightsForget = new float[weightsSize];
+        WeightsOutput = new float[weightsSize];
+        WeightsCandidate = new float[weightsSize];
+
+        outputGradients = new float[Size];
+        cellStateGradients = new float[Size];
+        inputGateGradients = new float[Size];
+        forgetGateGradients = new float[Size];
+        candidateCellGradients = new float[Size];
+
+        PreviousCellState = new float[this.Size];
+        PreviousNeuronValues = new float[this.Size];
+
+        for (int i = 0; i < Biases.Length; i++) Biases[i] = MathHelper.RandomFloat1_1();
+
+        for (int i = 0; i < WeightsInput.Length; i++) WeightsInput[i] = MathHelper.RandomFloat1_1();
+        for (int i = 0; i < WeightsForget.Length; i++) WeightsForget[i] = MathHelper.RandomFloat1_1();
+        for (int i = 0; i < WeightsOutput.Length; i++) WeightsOutput[i] = MathHelper.RandomFloat1_1();
+        for (int i = 0; i < WeightsCandidate.Length; i++) WeightsCandidate[i] = MathHelper.RandomFloat1_1();
     }
 
     public override void Summary()
@@ -147,39 +205,6 @@ public class LSTMLayer : BaseLayer
         WeightsCandidate = new float[weightsCandidateLength];
         for (int i = 0; i < weightsCandidateLength; i++) WeightsCandidate[i] = br.ReadSingle();
     }
-
-    public override void Initialize()
-    {
-        Biases = new float[this.Size];
-        NeuronValues = new float[this.Size];
-        Errors = new float[this.Size];
-
-        CellState = new float[this.Size];
-        OutputGate = new float[this.Size];
-        ForgetGate = new float[this.Size];
-        InputGate = new float[this.Size];
-        CandidateCellState = new float[this.Size];
-
-        int weightsSize = this.PreviousLayer.Size * this.Size;
-        WeightsInput = new float[weightsSize];
-        WeightsForget = new float[weightsSize];
-        WeightsOutput = new float[weightsSize];
-        WeightsCandidate = new float[weightsSize];
-
-        outputGradients = new float[Size];
-        cellStateGradients = new float[Size];
-        inputGateGradients = new float[Size];
-        forgetGateGradients = new float[Size];
-        candidateCellGradients = new float[Size];
-
-        for (int i = 0; i < Biases.Length; i++) Biases[i] = MathHelper.RandomFloat1_1();
-
-        for (int i = 0; i < WeightsInput.Length; i++) WeightsInput[i] = MathHelper.RandomFloat1_1();
-        for (int i = 0; i < WeightsForget.Length; i++) WeightsForget[i] = MathHelper.RandomFloat1_1();
-        for (int i = 0; i < WeightsOutput.Length; i++) WeightsOutput[i] = MathHelper.RandomFloat1_1();
-        for (int i = 0; i < WeightsCandidate.Length; i++) WeightsCandidate[i] = MathHelper.RandomFloat1_1();
-    }
-
     public override void InitializeCuda(int index)
     {
         CudaAccel.InitLSTMLayer(

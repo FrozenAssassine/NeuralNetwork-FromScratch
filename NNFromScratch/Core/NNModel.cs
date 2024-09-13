@@ -2,13 +2,14 @@
 using NNFromScratch.Helper;
 using SixLabors.ImageSharp.Formats;
 using System.Diagnostics;
+using System.Net.WebSockets;
 using System.Reflection.Emit;
 
 namespace NNFromScratch.Core;
 
 public class NNModel
 {
-    private NeuralNetwork nn;
+    public NeuralNetwork nn;
     private bool useCuda = false;
     private bool cudaLayersInitialized;
     private BaseLayer[] layers;
@@ -157,7 +158,8 @@ public class NNModel
         {
             for (int i = 0; i < x.Length; i++)
             {
-                if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(nn.FeedForward_CPU(x[i])))
+                var ff = nn.FeedForward_CPU(x[i]);
+                if (MathHelper.GetMaximumIndex(y[i]) == MathHelper.GetMaximumIndex(ff))
                     correct++;
             }
         }

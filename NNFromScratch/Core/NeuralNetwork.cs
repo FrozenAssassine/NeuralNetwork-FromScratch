@@ -3,7 +3,7 @@ using NNFromScratch.Helper;
 
 namespace NNFromScratch.Core;
 
-internal class NeuralNetwork
+public class NeuralNetwork
 {
     public readonly BaseLayer[] allLayer;
 
