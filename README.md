@@ -23,6 +23,8 @@ At the current point I would not recommend this in any production environment, f
 - **Optical Digit Recognition (ODR)**: Trained with the MNIST dataset of 60,000 images.
 - **XOR Test**: A simple test to demonstrate the neural network's basic functionality.
 - **CUDA Support**: Accelerates neural network training using GPU resources.
+### 📎See also [DeepReinforcementLearning](https://github.com/FrozenAssassine/DeepReinforcementLearning) from scratch using this project
+
 
 ## 📊 Benchmarks
 | Training Details | GPU (CUDA, RTX 3050) | CPU (i9-10900) | (CPU) Ryzen 5 3500U |
