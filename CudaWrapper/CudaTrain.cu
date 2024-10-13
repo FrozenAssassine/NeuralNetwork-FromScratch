@@ -21,7 +21,7 @@
         exit(EXIT_FAILURE);\
     }
 
-const int threadsPerBlock = 64;
+const int threadsPerBlock = 32;
 
 BaseLayer** gpu_allLayer = nullptr;
 BaseLayer** cpu_allLayer = nullptr;
