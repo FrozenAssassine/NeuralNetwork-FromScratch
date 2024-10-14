@@ -3,193 +3,135 @@ namespace NNFromScratch.Core.Layers;
 
 public class ConvolutionalLayer : BaseLayer
 {
-    private int inputHeight, inputWidth, inputChannels;
-    private int filterSize, numFilters, stride;
-    private float[,,,] filters; // 4D array: [numFilters, filterHeight, filterWidth, inputChannels]
+    private float[] filters;
     private float[] biases;
 
-    public ConvolutionalLayer(int inputHeight, int inputWidth, int inputChannels, int filterSize, int numFilters, int stride = 1)
+    public int NumFilters { get; }
+    public int FilterSize { get; }
+    public int InputHeight { get; }
+    public int InputWidth { get; }
+    public int OutputHeight { get; }
+    public int OutputWidth { get; }
+
+    public ConvolutionalLayer(int inputHeight, int inputWidth, int filterSize, int numFilters)
     {
-        this.inputHeight = inputHeight;
-        this.inputWidth = inputWidth;
-        this.inputChannels = inputChannels;
-        this.filterSize = filterSize;
-        this.numFilters = numFilters;
-        this.stride = stride;
+        NumFilters = numFilters;
+        FilterSize = filterSize;
+        InputHeight = inputHeight;
+        InputWidth = inputWidth;
+
+        // Calculate output dimensions
+        OutputHeight = inputHeight - filterSize + 1;
+        OutputWidth = inputWidth - filterSize + 1;
 
         // Initialize filters and biases
-        Initialize();
+        filters = InitializeRandomArray(numFilters, filterSize, filterSize);
+        biases = InitializeRandomArray(numFilters, OutputHeight, OutputWidth);
     }
 
-    public override void Initialize()
+    private float[] InitializeRandomArray(int depth, int height, int width)
     {
-        Random rand = new Random();
-        filters = new float[numFilters, filterSize, filterSize, inputChannels];
-        biases = new float[numFilters];
+        var array = new float[depth * height * width];
+        var random = new Random();
 
-        // Initialize filters with random values
-        for (int f = 0; f < numFilters; f++)
+        for (int d = 0; d < depth; d++)
         {
-            for (int c = 0; c < inputChannels; c++)
+            for (int h = 0; h < height; h++)
             {
-                for (int i = 0; i < filterSize; i++)
+                for (int w = 0; w < width; w++)
                 {
-                    for (int j = 0; j < filterSize; j++)
-                    {
-                        filters[f, i, j, c] = (float)(rand.NextDouble() * 2 - 1); // Range [-1, 1]
-                    }
+                    array[d  * height * width + h * width + w] = random.NextSingle();
                 }
             }
-            biases[f] = 0.0f;
         }
+
+        return array;
     }
 
     public override void FeedForward()
     {
-        if (PreviousLayer == null)
-            throw new Exception("Previous layer is not set for this convolutional layer.");
+        var output = new float[OutputWidth * OutputHeight];
 
-        float[] inputValues = PreviousLayer.NeuronValues;
-        float[,,] input3D = ConvertTo3D(inputValues, inputHeight, inputWidth, inputChannels);
-
-        int outputHeight = (inputHeight - filterSize) / stride + 1;
-        int outputWidth = (inputWidth - filterSize) / stride + 1;
-        NeuronValues = new float[outputHeight * outputWidth * numFilters];
-
-        int index = 0;
-
-        // Perform the convolution
-        for (int f = 0; f < numFilters; f++)
+        // Loop through each filter
+        for (int i = 0; i < NumFilters; i++)
         {
-            for (int i = 0; i < outputHeight; i++)
-            {
-                for (int j = 0; j < outputWidth; j++)
-                {
-                    float value = 0.0f;
+            // Get the current filter (assuming you have a filters array)
 
-                    // Apply filter on the input 3D array
-                    for (int c = 0; c < inputChannels; c++)
-                    {
-                        for (int fi = 0; fi < filterSize; fi++)
-                        {
-                            for (int fj = 0; fj < filterSize; fj++)
-                            {
-                                int startRow = i * stride + fi;
-                                int startCol = j * stride + fj;
-                                value += input3D[startRow, startCol, c] * filters[f, fi, fj, c];
-                            }
-                        }
-                    }
+            // Calculate the correlation output for the current filter
+            float[] filterOutput = Correlate2D(this.PreviousLayer.NeuronValues, InputHeight, filters, FilterSize, FilterSize);
 
-                    value += biases[f]; // Add bias
-                    NeuronValues[index++] = Activate(value);
-                }
-            }
+            // Assign the output for this filter
+            Array.Copy(filterOutput, 0, output, i * OutputWidth * OutputHeight, filterOutput.Length);
         }
+
+        // Store the output for the next layer (not shown in your code)
+        this.NeuronValues = output;
     }
 
-    public override void Train(float[] desiredValues, float learningRate)
+    private float[] Correlate2D(float[] input, int imageHeight, float[] filter, int filterWidth, int filterHeight)
     {
-        int outputHeight = (inputHeight - filterSize) / stride + 1;
-        int outputWidth = (inputWidth - filterSize) / stride + 1;
-        Errors = new float[NeuronValues.Length];
+        int inputHeight = imageHeight;
+        int inputWidth = input.Length / imageHeight;
 
-        // Calculate errors (difference between output and desired values)
-        for (int i = 0; i < Errors.Length; i++)
+        int outputHeight = inputHeight - filterHeight + 1;
+        int outputWidth = inputWidth - filterWidth + 1;
+
+        float[] output = new float[outputWidth * outputHeight];
+
+        // Perform 2D correlation (sliding window)
+        for (int i = 0; i < outputHeight; i++)
         {
-            Errors[i] = NeuronValues[i] - desiredValues[i];
-        }
-
-        // Gradients for filters and biases
-        float[,,,] filterGradient = new float[numFilters, filterSize, filterSize, inputChannels];
-        float[] biasGradient = new float[numFilters];
-
-        // Backpropagate errors to update filters and biases
-        for (int f = 0; f < numFilters; f++)
-        {
-            for (int i = 0; i < outputHeight; i++)
+            for (int j = 0; j < outputWidth; j++)
             {
-                for (int j = 0; j < outputWidth; j++)
+                float sum = 0.0f;
+
+                // Element-wise multiplication of the filter and the input patch
+                for (int m = 0; m < filterHeight; m++)
                 {
-                    int index = f * outputHeight * outputWidth + i * outputWidth + j;
-                    float error = Errors[index];
-
-                    for (int c = 0; c < inputChannels; c++)
+                    for (int n = 0; n < filterWidth; n++)
                     {
-                        for (int fi = 0; fi < filterSize; fi++)
-                        {
-                            for (int fj = 0; fj < filterSize; fj++)
-                            {
-                                int startRow = i * stride + fi;
-                                int startCol = j * stride + fj;
-                                filterGradient[f, fi, fj, c] += error * PreviousLayer.NeuronValues[startRow * inputWidth + startCol];
-                            }
-                        }
-                    }
+                        // Calculate the 1D index for the input array
+                        int inputIndex = (i + m) * inputWidth + (j + n);
+                        int filterIndex = m * filterWidth + n;
 
-                    biasGradient[f] += error;
+                        sum += input[inputIndex] * filter[filterIndex];
+                    }
                 }
+
+                output[i * outputWidth + j] = sum;
             }
         }
 
-        // Update filters and biases using gradients
-        for (int f = 0; f < numFilters; f++)
-        {
-            for (int c = 0; c < inputChannels; c++)
-            {
-                for (int i = 0; i < filterSize; i++)
-                {
-                    for (int j = 0; j < filterSize; j++)
-                    {
-                        filters[f, i, j, c] -= learningRate * filterGradient[f, i, j, c];
-                    }
-                }
-            }
-            biases[f] -= learningRate * biasGradient[f];
-        }
+        return output;
     }
 
-    public override void Summary()
+    public override void Initialize()
     {
-        Console.WriteLine($"Convolutional Layer: {numFilters} filters of size {filterSize}x{filterSize} with stride {stride}");
-    }
 
-    public override void Save(BinaryWriter bw)
-    {
-        // Implement save logic for filters and biases
-    }
-
-    public override void Load(BinaryReader br)
-    {
-        // Implement load logic for filters and biases
     }
 
     public override void InitializeCuda(int index)
     {
-        // CUDA initialization not implemented in this sample.
+        throw new NotImplementedException();
     }
 
-    private float Activate(float value)
+    public override void Load(BinaryReader br)
     {
-        return value > 0 ? value : 0; // ReLU Activation
+        throw new NotImplementedException();
     }
 
-    private float[,,] ConvertTo3D(float[] input, int height, int width, int channels)
+    public override void Save(BinaryWriter bw)
     {
-        float[,,] result = new float[height, width, channels];
-        int index = 0;
+        throw new NotImplementedException();
+    }
 
-        for (int c = 0; c < channels; c++)
-        {
-            for (int i = 0; i < height; i++)
-            {
-                for (int j = 0; j < width; j++)
-                {
-                    result[i, j, c] = input[index++];
-                }
-            }
-        }
+    public override void Summary()
+    {
+        throw new NotImplementedException();
+    }
 
-        return result;
+    public override void Train(float[] desiredValues, float learningRate)
+    {
+        throw new NotImplementedException();
     }
 }
