@@ -41,6 +41,11 @@ public class OutputLayer : BaseLayer
 
     public override void Train(float[] desiredValues, float learningRate)
     {
+        if(desiredValues.Length != this.Size)
+        {
+            throw new Exception("Output layer count does not match provided data");
+        }
+
         //output -> error
         Parallel.For(0, this.Size, (idx) =>
         {

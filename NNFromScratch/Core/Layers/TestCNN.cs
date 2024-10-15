@@ -102,7 +102,6 @@ public class TestCNN
         return output;
     }
 
-
     public static void Main()
     {
         float[] image = {

@@ -10,16 +10,18 @@ public class ConvolutionalLayer : BaseLayer
     public int imageHeight = 0;
     public float[] errorGradients;
     public ConvolutionalFilterType[] filters;
-    public int featureMapX = 0;
-    public int featureMapY = 0;
+    public int featureMapX;
+    public int featureMapY;
     public int stride;
 
-    public ConvolutionalLayer(int imageWidth, int imageHeight, int stride, ConvolutionalFilterType[] filters)
+    public ConvolutionalLayer(int imageWidth, int imageHeight, int stride, int featureMapX, int featureMapY, ConvolutionalFilterType[] filters)
     {
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
         this.filters = filters;
         this.stride = stride;
+        this.featureMapX = featureMapX;
+        this.featureMapY = featureMapY;
     }
 
     public override void FeedForward()
@@ -63,10 +65,26 @@ public class ConvolutionalLayer : BaseLayer
     }
     private void UpdateFilter(float[] filterGradient, float learningRate)
     {
-        for (int i = 0; i < featureMap.Length; i++)
+        // Assuming featureMap is organized by filter and the gradient affects specific regions.
+        int outputWidth = featureMapX; // Width of the feature map
+        int outputHeight = featureMapY; // Height of the feature map
+        int filterSize = filterGradient.Length; // Should be the number of output classes (6 in your case)
+
+        // Loop through the output neurons (which is 6)
+        for (int i = 0; i < filterSize; i++)
         {
-            // Update each filter weight
-            featureMap[i] -= learningRate * filterGradient[i];
+            // Determine the position in the featureMap to update
+            int outputX = i % outputWidth; // Assuming linear access
+            int outputY = i / outputWidth;  // Assuming linear access
+
+            // Propagate the filterGradient back to the relevant regions in featureMap
+            for (int j = 0; j < featureMap.Length; j++)
+            {
+                // Only update the relevant sections of the featureMap
+                // Example logic, replace with your actual logic to determine the effect region
+                // This assumes each filter affects a specific portion of the feature map based on its position
+                featureMap[j] -= learningRate * filterGradient[i]; // Adjust this logic as per your filter mapping
+            }
         }
     }
 
@@ -126,20 +144,38 @@ public class ConvolutionalLayer : BaseLayer
 
         return filterGradient;
     }
-    private float[] CalculateOutputGradients(float[] desiredValues, float[] outputValues)
+    private float[] CalculateOutputGradients(float[] desiredValues, float[] pooledOutput)
     {
-        int outputSize = outputValues.Length;
-        float[] outputGradients = new float[outputSize];
+        float[] outputGradients = new float[desiredValues.Length];
 
-        for (int i = 0; i < outputSize; i++)
+        for (int i = 0; i < desiredValues.Length; i++)
         {
-            //mse deriviative:
-            outputGradients[i] = outputValues[i] - desiredValues[i];
+            outputGradients[i] = desiredValues[i] - pooledOutput[i];
         }
 
-        return outputGradients;
-    }
+        // Create a larger gradient array for the feature map
+        float[] fullGradients = new float[featureMap.Length];
 
+        // Distribute output gradients to the full gradients
+        for (int i = 0; i < desiredValues.Length; i++)
+        {
+            int outputIndex = i; // You need to map your output neuron to the corresponding feature map region
+
+            // Adjust based on your feature map size and how the outputs correspond to it
+            for (int j = 0; j < featureMapY; j++)
+            {
+                for (int k = 0; k < featureMapX; k++)
+                {
+                    var mappingFactor = 1f / (featureMapX * featureMapY); // Normalizes the contribution
+
+                    // You would have to determine how this mapping works, for example:
+                    fullGradients[outputIndex] += outputGradients[i] * mappingFactor;
+                }
+            }
+        }
+
+        return fullGradients;
+    }
     public static float ElementWiseMultiplyRGB(float[] imageSection, float[] filter, int sectionWidth, int sectionHeight, int channel)
     {
         float sum = 0;
@@ -190,12 +226,12 @@ public class ConvolutionalLayer : BaseLayer
     {
         for (int i = 0; i < filters.Length; i++)
         {
-            var features = ConvolutionRGB(image, imageWidth, imageHeight, GetFilterForType(filters[i]), 3, 3);
+            var extractedFeatures = ConvolutionRGB(image, imageWidth, imageHeight, GetFilterForType(filters[i]), 3, 3);
             if (featureMap == null)
-                featureMap = new float[features.Length * filters.Length];
+                featureMap = new float[extractedFeatures.Length * filters.Length];
 
-            int offset = features.Length * i; //check whether correct?
-            Array.Copy(featureMap, 0, features, offset, featureMap.Length);
+            int offset = extractedFeatures.Length * i; //check whether correct?
+            Array.Copy(extractedFeatures, 0, featureMap, offset, extractedFeatures.Length);
         }
     }
     private float[] GetFilterForType(ConvolutionalFilterType filterType)
