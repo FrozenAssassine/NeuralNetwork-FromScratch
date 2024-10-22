@@ -13,6 +13,8 @@ public class PoolingLayer : BaseLayer
     {
         this.PoolSize = poolSize;
         this.Stride = stride;
+        this.inputWidth = inputWidth;
+        this.inputHeight = inputHeight;
     }
 
     public int CalculateDenseLayerNeurons(int featureMapX, int featureMapY, int depth)

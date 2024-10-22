@@ -15,7 +15,7 @@ public class Program
 
         //Test_NextSequencePrediction.Run();
         //Test_SortedListCheck.Run();
-        Test_SceneClassification.Run();
+        //Test_SceneClassification.Run();
         //MinecraftSkinCreator.Run();
         //Test_ODR.Run();
         //Test_XOR.Run();

@@ -26,7 +26,7 @@ public class ConvolutionalLayer : BaseLayer
 
     public override void FeedForward()
     {
-        if(this.PreviousLayer is InputLayer inputLayer)
+        if (this.PreviousLayer is InputLayer inputLayer)
         {
             ApplyFilters(inputLayer.NeuronValues, imageWidth, imageHeight, filters);
         }
@@ -66,24 +66,17 @@ public class ConvolutionalLayer : BaseLayer
     private void UpdateFilter(float[] filterGradient, float learningRate)
     {
         // Assuming featureMap is organized by filter and the gradient affects specific regions.
-        int outputWidth = featureMapX; // Width of the feature map
-        int outputHeight = featureMapY; // Height of the feature map
-        int filterSize = filterGradient.Length; // Should be the number of output classes (6 in your case)
+        int outputWidth = featureMapX;
+        int filterSize = filterGradient.Length; 
 
         // Loop through the output neurons (which is 6)
         for (int i = 0; i < filterSize; i++)
         {
-            // Determine the position in the featureMap to update
-            int outputX = i % outputWidth; // Assuming linear access
-            int outputY = i / outputWidth;  // Assuming linear access
-
             // Propagate the filterGradient back to the relevant regions in featureMap
             for (int j = 0; j < featureMap.Length; j++)
             {
                 // Only update the relevant sections of the featureMap
-                // Example logic, replace with your actual logic to determine the effect region
-                // This assumes each filter affects a specific portion of the feature map based on its position
-                featureMap[j] -= learningRate * filterGradient[i]; // Adjust this logic as per your filter mapping
+                featureMap[j] -= learningRate * filterGradient[i];
             }
         }
     }
@@ -146,30 +139,34 @@ public class ConvolutionalLayer : BaseLayer
     }
     private float[] CalculateOutputGradients(float[] desiredValues, float[] pooledOutput)
     {
+        // Create a gradient array for the output layer
         float[] outputGradients = new float[desiredValues.Length];
 
+        // Calculate the output layer's gradients based on desired values and actual pooled output
         for (int i = 0; i < desiredValues.Length; i++)
         {
             outputGradients[i] = desiredValues[i] - pooledOutput[i];
         }
 
-        // Create a larger gradient array for the feature map
+        // Now distribute the gradients back to the full feature map
         float[] fullGradients = new float[featureMap.Length];
 
-        // Distribute output gradients to the full gradients
+        int outputWidth = featureMapX; // The width of your feature map
+        int outputHeight = featureMapY; // The height of your feature map
+
+        // Assuming each output gradient influences a region in the feature map, distribute accordingly
+        int regionWidth = outputWidth / desiredValues.Length; // Divide feature map among outputs
+        int regionHeight = outputHeight / desiredValues.Length;
+
         for (int i = 0; i < desiredValues.Length; i++)
         {
-            int outputIndex = i; // You need to map your output neuron to the corresponding feature map region
-
-            // Adjust based on your feature map size and how the outputs correspond to it
-            for (int j = 0; j < featureMapY; j++)
+            for (int y = 0; y < regionHeight; y++)
             {
-                for (int k = 0; k < featureMapX; k++)
+                for (int x = 0; x < regionWidth; x++)
                 {
-                    var mappingFactor = 1f / (featureMapX * featureMapY); // Normalizes the contribution
-
-                    // You would have to determine how this mapping works, for example:
-                    fullGradients[outputIndex] += outputGradients[i] * mappingFactor;
+                    // Mapping the output gradient to the corresponding region of the feature map
+                    int featureMapIndex = (i * regionWidth * regionHeight) + (y * regionWidth + x);
+                    fullGradients[featureMapIndex] += outputGradients[i]; // Distribute the gradient
                 }
             }
         }
