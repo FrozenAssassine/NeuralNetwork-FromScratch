@@ -65,20 +65,15 @@ public class ConvolutionalLayer : BaseLayer
     }
     private void UpdateFilter(float[] filterGradient, float learningRate)
     {
-        // Assuming featureMap is organized by filter and the gradient affects specific regions.
-        int outputWidth = featureMapX;
-        int filterSize = filterGradient.Length; 
+        int filterSize = filterGradient.Length;
 
-        // Loop through the output neurons (which is 6)
-        for (int i = 0; i < filterSize; i++)
+        Parallel.For(0, filterSize, (idx) =>
         {
-            // Propagate the filterGradient back to the relevant regions in featureMap
             for (int j = 0; j < featureMap.Length; j++)
             {
-                // Only update the relevant sections of the featureMap
-                featureMap[j] -= learningRate * filterGradient[i];
+                featureMap[j] -= learningRate * filterGradient[idx];
             }
-        }
+        });
     }
 
     private float[] ExtractInputSection(float[] inputImage, int inputWidth, int inputHeight,
@@ -90,13 +85,13 @@ public class ConvolutionalLayer : BaseLayer
         int inputX = outputX * stride;
         int inputY = outputY * stride;
 
-        for (int x = 0; x < filterWidth; x++)
+        for (int i = 0; i < filterWidth; i++)
         {
             for (int y = 0; y < filterHeight; y++)
             {
-                if (inputX + x < inputWidth && inputY + y < inputHeight)
+                if (inputX + i < inputWidth && inputY + y < inputHeight)
                 {
-                    inputSection[x * filterWidth + y] = inputImage[(inputY + y) * inputWidth + (inputX + x)];
+                    inputSection[i * filterWidth + y] = inputImage[(inputY + y) * inputWidth + (inputX + i)];
                 }
             }
         }
@@ -113,7 +108,7 @@ public class ConvolutionalLayer : BaseLayer
 
         float[] filterGradient = new float[filterSize];
 
-        for (int i = 0; i < outputHeight; i++)
+        Parallel.For(0, outputHeight, (idx) =>
         {
             for (int j = 0; j < outputWidth; j++)
             {
@@ -125,15 +120,15 @@ public class ConvolutionalLayer : BaseLayer
                     3,
                     3,
                     j,
-                    i,
+                    idx,
                     stride);
 
                 for (int k = 0; k < filterSize; k++)
                 {
-                    filterGradient[k] += errorGradient[i * outputWidth + j] * inputSection[k];
+                    filterGradient[k] += errorGradient[idx * outputWidth + j] * inputSection[k];
                 }
             }
-        }
+        });
 
         return filterGradient;
     }
@@ -158,18 +153,18 @@ public class ConvolutionalLayer : BaseLayer
         int regionWidth = outputWidth / desiredValues.Length; // Divide feature map among outputs
         int regionHeight = outputHeight / desiredValues.Length;
 
-        for (int i = 0; i < desiredValues.Length; i++)
+        Parallel.For(0, desiredValues.Length, (idx) =>
         {
             for (int y = 0; y < regionHeight; y++)
             {
                 for (int x = 0; x < regionWidth; x++)
                 {
                     // Mapping the output gradient to the corresponding region of the feature map
-                    int featureMapIndex = (i * regionWidth * regionHeight) + (y * regionWidth + x);
-                    fullGradients[featureMapIndex] += outputGradients[i]; // Distribute the gradient
+                    int featureMapIndex = (idx * regionWidth * regionHeight) + (y * regionWidth + x);
+                    fullGradients[featureMapIndex] += outputGradients[idx]; // Distribute the gradient
                 }
             }
-        }
+        });
 
         return fullGradients;
     }
@@ -193,7 +188,7 @@ public class ConvolutionalLayer : BaseLayer
         float[] output = new float[outputRows * outputCols * 3]; //r,g,b
 
         //iterate over every pixel of the image and apply filter
-        for (int i = 0; i < outputRows; i++)
+        Parallel.For(0, outputRows, idx =>
         {
             for (int j = 0; j < outputCols; j++)
             {
@@ -205,17 +200,17 @@ public class ConvolutionalLayer : BaseLayer
                         for (int channel = 0; channel < 3; channel++)
                         {
                             imageSection[(x * filterWidth + y) * 3 + channel] =
-                                image[((i + x) * imageWidth + (j + y)) * 3 + channel];
+                                image[((idx + x) * imageWidth + (j + y)) * 3 + channel];
                         }
                     }
                 }
 
                 for (int channel = 0; channel < 3; channel++)
                 {
-                    output[((i * outputCols) + j) * 3 + channel] = ElementWiseMultiplyRGB(imageSection, filter, filterWidth, filterHeight, channel);
+                    output[((idx * outputCols) + j) * 3 + channel] = ElementWiseMultiplyRGB(imageSection, filter, filterWidth, filterHeight, channel);
                 }
             }
-        }
+        });
 
         return output;
     }

@@ -13,7 +13,7 @@ internal class Test_CNN
     const int ImageWidth = 150;
     const int ImageHeight = 150;
     const int PixelDepth = 3; //rgb
-    const int ImageCount = 1000; //total of 17033 images
+    const int ImageCount = 500; //total of 17033 images
     const int OutputTypes = 6; //Buildings, Forests, Mountains, Glacier, Street, Sea
     const int featureMapX = 28;
     const int featureMapY = 28;
@@ -52,7 +52,7 @@ internal class Test_CNN
 
         //network.Load("D:\\imageclassification.cool");
 
-        network.Train(images, desired, 25, 0.1f);
+        network.Train(images, desired, 100, 0.1f);
         Console.WriteLine("Press enter to evaluate");
         Console.ReadLine();
 

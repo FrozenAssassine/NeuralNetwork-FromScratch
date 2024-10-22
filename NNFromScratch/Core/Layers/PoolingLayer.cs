@@ -36,7 +36,7 @@ public class PoolingLayer : BaseLayer
         int outputHeight = (inputHeight - PoolSize) / Stride + 1;
         float[] output = new float[outputWidth * outputHeight];
 
-        for (int y = 0; y < outputHeight; y++)
+        Parallel.For(0, outputHeight, (idy) => //for (int y = 0; y < outputHeight; y++)
         {
             for (int x = 0; x < outputWidth; x++)
             {
@@ -48,7 +48,7 @@ public class PoolingLayer : BaseLayer
                     for (int i = 0; i < PoolSize; i++)
                     {
                         int inputX = x * Stride + i;
-                        int inputY = y * Stride + j;
+                        int inputY = idy * Stride + j;
 
                         if (inputX < inputWidth && inputY < inputHeight)
                         {
@@ -58,10 +58,10 @@ public class PoolingLayer : BaseLayer
                     }
                 }
 
-                output[y * outputWidth + x] = sum / count;
+                output[idy * outputWidth + x] = sum / count;
             }
-        }
-        
+        });
+
         this.NeuronValues = output; //set for dense layer
     }
 
