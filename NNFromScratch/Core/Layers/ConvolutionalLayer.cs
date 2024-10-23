@@ -1,4 +1,5 @@
 ﻿
+using NNFromScratch.Helper;
 using NNFromScratch.Models;
 
 namespace NNFromScratch.Core.Layers;
@@ -13,6 +14,8 @@ public class ConvolutionalLayer : BaseLayer
     public int featureMapX;
     public int featureMapY;
     public int stride;
+    public int filterHeight = 3;
+    public int filterWidth = 3;
 
     public ConvolutionalLayer(int imageWidth, int imageHeight, int stride, int featureMapX, int featureMapY, ConvolutionalFilterType[] filters)
     {
@@ -33,6 +36,9 @@ public class ConvolutionalLayer : BaseLayer
     }
     public override void Initialize()
     {
+        int outputRows = imageHeight - filterHeight + 1;
+        int outputCols = imageWidth - filterWidth + 1;
+        featureMap = new float[(outputRows * outputCols * 3) * filters.Length];
 
     }
 
@@ -42,11 +48,16 @@ public class ConvolutionalLayer : BaseLayer
     }
     public override void Load(BinaryReader br)
     {
-        throw new NotImplementedException();
+        //initialize only here, the normal initialisation will be made through a function
+        errorGradients = new float[featureMap.Length];
+
+        LayerSaveLoadHelper.LoadData(featureMap, br);
+        LayerSaveLoadHelper.LoadData(errorGradients, br);
     }
     public override void Save(BinaryWriter bw)
     {
-        throw new NotImplementedException();
+        LayerSaveLoadHelper.SaveData(featureMap, bw);
+        LayerSaveLoadHelper.SaveData(errorGradients, bw);
     }
     public override void Summary()
     {
@@ -77,7 +88,6 @@ public class ConvolutionalLayer : BaseLayer
     }
 
     private float[] ExtractInputSection(float[] inputImage, int inputWidth, int inputHeight,
-                                     int filterWidth, int filterHeight,
                                      int outputX, int outputY, int stride)
     {
         float[] inputSection = new float[filterWidth * filterHeight];
@@ -117,8 +127,6 @@ public class ConvolutionalLayer : BaseLayer
                     this.PreviousLayer.NeuronValues,
                     imageWidth,
                     imageHeight,
-                    3,
-                    3,
                     j,
                     idx,
                     stride);
@@ -168,7 +176,7 @@ public class ConvolutionalLayer : BaseLayer
 
         return fullGradients;
     }
-    public static float ElementWiseMultiplyRGB(float[] imageSection, float[] filter, int sectionWidth, int sectionHeight, int channel)
+    private float ElementWiseMultiplyRGB(float[] imageSection, float[] filter, int sectionWidth, int sectionHeight, int channel)
     {
         float sum = 0;
         for (int i = 0; i < sectionHeight; i++)
@@ -181,7 +189,7 @@ public class ConvolutionalLayer : BaseLayer
         }
         return sum;
     }
-    public static float[] ConvolutionRGB(float[] image, int imageWidth, int imageHeight, float[] filter, int filterWidth, int filterHeight)
+    private float[] ConvolutionRGB(float[] image, int imageWidth, int imageHeight, float[] filter)
     {
         int outputRows = imageHeight - filterHeight + 1;
         int outputCols = imageWidth - filterWidth + 1;
@@ -214,13 +222,11 @@ public class ConvolutionalLayer : BaseLayer
 
         return output;
     }
-    public void ApplyFilters(float[] image, int imageWidth, int imageHeight, ConvolutionalFilterType[] filterType)
+    private void ApplyFilters(float[] image, int imageWidth, int imageHeight, ConvolutionalFilterType[] filterType)
     {
         for (int i = 0; i < filters.Length; i++)
         {
-            var extractedFeatures = ConvolutionRGB(image, imageWidth, imageHeight, GetFilterForType(filters[i]), 3, 3);
-            if (featureMap == null)
-                featureMap = new float[extractedFeatures.Length * filters.Length];
+            var extractedFeatures = ConvolutionRGB(image, imageWidth, imageHeight, GetFilterForType(filters[i]));
 
             int offset = extractedFeatures.Length * i; //check whether correct?
             Array.Copy(extractedFeatures, 0, featureMap, offset, extractedFeatures.Length);
@@ -236,6 +242,10 @@ public class ConvolutionalLayer : BaseLayer
                 return new float[] { -1, -2, -1, 0, 0, 0, 1, 2, 1 }; //3x3 Sobel Y
             case ConvolutionalFilterType.Laplacian:
                 return new float[] { 0, 1, 0, 1, -4, 1, 0, 1, 0 };  //3x3 Laplacian
+            case ConvolutionalFilterType.Embossing:
+                return new float[] { -2, -1, 0, -1, 1, 1, 0, 1, 2 };  //3x3 Embossing
+            case ConvolutionalFilterType.Sharpening:
+                return new float[] { 0, -1, 0, -1, 5, -1, 0, -1, 0 };  //3x3 Sharpening
             default:
                 throw new ArgumentException("Unknown filter in Convolutional layer");
         }

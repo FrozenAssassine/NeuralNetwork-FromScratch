@@ -49,12 +49,14 @@ namespace NNFromScratch.Core.Layers
 
         public override void Load(BinaryReader br)
         {
-            LayerSaveLoadFunction.Load(this, br);
+            LayerSaveLoadHelper.LoadData(Biases, br);
+            LayerSaveLoadHelper.LoadData(Weights, br);
         }
 
         public override void Save(BinaryWriter bw)
         {
-            LayerSaveLoadFunction.Save(this, bw);
+            LayerSaveLoadHelper.SaveData(Biases, bw);
+            LayerSaveLoadHelper.SaveData(Weights, bw);
         }
 
         public override void Summary()

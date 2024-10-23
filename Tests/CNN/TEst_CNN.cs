@@ -13,7 +13,7 @@ internal class Test_CNN
     const int ImageWidth = 150;
     const int ImageHeight = 150;
     const int PixelDepth = 3; //rgb
-    const int ImageCount = 500; //total of 17033 images
+    const int ImageCount = 1000; //total of 17033 images
     const int OutputTypes = 6; //Buildings, Forests, Mountains, Glacier, Street, Sea
     const int featureMapX = 28;
     const int featureMapY = 28;
@@ -36,7 +36,7 @@ internal class Test_CNN
         }
 
 
-        var filters = new ConvolutionalFilterType[] { ConvolutionalFilterType.SobelX, ConvolutionalFilterType.SobelY };
+        var filters = new ConvolutionalFilterType[] { ConvolutionalFilterType.SobelX, ConvolutionalFilterType.SobelY, ConvolutionalFilterType.Laplacian, ConvolutionalFilterType.Sharpening };
         var poolingLayer = new PoolingLayer(ImageWidth, ImageHeight, 3, filters.Length);
         var denseLayerNeurons = poolingLayer.CalculateDenseLayerNeurons(featureMapX, featureMapX, PixelDepth);
         poolingLayer.Size = denseLayerNeurons;
@@ -46,23 +46,23 @@ internal class Test_CNN
             .Stack(new InputLayer(ImageWidth * ImageHeight * PixelDepth))
             .Stack(new ConvolutionalLayer(ImageWidth, ImageHeight, 1, featureMapX, featureMapY, filters))
             .Stack(poolingLayer)
-            .Stack(new DenseLayer(denseLayerNeurons, ActivationType.Sigmoid))
+            .Stack(new DenseLayer(denseLayerNeurons, ActivationType.Relu))
             .Stack(new OutputLayer(6, ActivationType.Softmax))
             .Build(false);
 
-        //network.Load("D:\\imageclassification.cool");
+        network.Load("D:\\imageclassification2.cool");
 
-        network.Train(images, desired, 100, 0.1f);
+        network.Train(images, desired, 25, 0.03f);
+
+        Console.WriteLine("Press enter to save");
+        Console.ReadLine();
+        network.Save("D:\\imageclassification2.cool");
+
         Console.WriteLine("Press enter to evaluate");
         Console.ReadLine();
-
-        //Console.WriteLine("Press enter to save");
-        //Console.ReadLine();
-        //network.Save("D:\\imageclassification.cool");
-
         Random random = new Random();
 
-        var randomIndices = Enumerable.Range(0, 5000)
+        var randomIndices = Enumerable.Range(0, 500)
                                       .Select(_ => random.Next(0, images.Length))
                                       .Distinct()
                                       .ToList();

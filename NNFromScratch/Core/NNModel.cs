@@ -56,7 +56,7 @@ public class NNModel
         return prediction;
     }
 
-    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, int loggingInterval = 100, bool evaluate = false, int evaluatePercent = 10)
+    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, int loggingInterval = 100, float evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.allLayer[0].Size)
             throw new Exception("Input size does not match input layer count");
@@ -65,9 +65,11 @@ public class NNModel
         if (useCuda)
             useCuda = CudaAccel.CheckCuda();
 
+        LossCalculator lossCalc = new LossCalculator(nn);
+        AccuracyCalculator accCalc = new AccuracyCalculator(nn);
+
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];
-
         var trainingTime = BenchmarkExtension.Benchmark(() =>
         {
             Stopwatch epochTime = new Stopwatch();
@@ -77,6 +79,8 @@ public class NNModel
                 float averageStepTime = 0;
                 epochTime.Restart();
                 stepTimeSW.Start();
+                lossCalc.NextEpoch();
+                accCalc.NextEpoch();
 
                 for (int i = 0; i < inputs.Length; i++)
                 {
@@ -85,26 +89,24 @@ public class NNModel
                     else
                         nn.Train_CPU(inputs[i], desired[i], learningRate);
 
+                    lossCalc.Calculate(desired[i]);
+
                     if ((i + 1) % loggingInterval == 0)
                     {
                         stepTimeSW.Stop();
 
                         averageStepTime += stepTimeSW.ElapsedMilliseconds;
                         Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1}/{inputs.Length}; ({stepTimeSW.ElapsedMilliseconds}ms, {stepTimeSW.ElapsedTicks}ticks)");
-
                         stepTimeSW.Restart();
                     }
                 }
+                
+                accCalc.Calculate(inputs, desired);
+
                 Console.WriteLine(new string('-', 50));
                 Console.WriteLine($"Epoch {e + 1} took {epochTime.ElapsedMilliseconds}ms; " + (averageStepTime > 0 ? $"avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step" : ""));
-
-                //evaluate after every epoch
-                if (evaluate)
-                {
-                    int percent = inputs.Length / 100 * evaluatePercent;
-                    accuracys[e] = percent;
-                    Evaluate(inputs.Take(percent).ToArray(), desired.Take(percent).ToArray(), useCuda);
-                }
+                lossCalc.PrintLoss();
+                accCalc.PrintAccuracy();
 
                 if (e != epochs - 1)
                     Console.WriteLine(new string('-', 50));

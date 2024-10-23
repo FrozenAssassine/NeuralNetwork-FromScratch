@@ -77,12 +77,12 @@ public class PoolingLayer : BaseLayer
 
     public override void Load(BinaryReader br)
     {
-        throw new NotImplementedException();
+        //nothing to load here
     }
 
     public override void Save(BinaryWriter bw)
     {
-        throw new NotImplementedException();
+        //nothing to save here
     }
 
     public override void Summary()

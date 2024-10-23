@@ -5,8 +5,8 @@ namespace NNFromScratch.Helper;
 
 internal static class CudaAccel
 {
-    const string DDL_PATH = "F:\\C#\\NNFromScratch\\x64\\Release\\CudaWrapper.dll"; //your cuda dll path
-    //const string DDL_PATH = "D:\\Github\\NNFromScratch\\x64\\Debug\\CudaWrapper.dll"; //your cuda dll path
+    //const string DDL_PATH = "F:\\C#\\NNFromScratch\\x64\\Release\\CudaWrapper.dll"; //your cuda dll path
+    const string DDL_PATH = "D:\\Github\\NNFromScratch\\x64\\Debug\\CudaWrapper.dll"; //your cuda dll path
 
 
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
