@@ -1,4 +1,4 @@
-﻿using Tests.XOR;
+using Tests.XOR;
 using Tests.TestODR;
 using Tests.MCSkinCreator;
 using Tests.SceneClassification;
@@ -19,5 +19,6 @@ public class Program
         //MinecraftSkinCreator.Run();
         //Test_ODR.Run();
         //Test_XOR.Run();
+        //Test_ODR.Run();
     }
 }

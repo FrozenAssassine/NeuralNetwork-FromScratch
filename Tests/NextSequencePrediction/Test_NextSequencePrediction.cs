@@ -6,7 +6,7 @@ namespace Tests.NextSequencePrediction
     internal class Test_NextSequencePrediction
     {
         static Random random = new Random();
-        static int numberOfLists = 5000;
+        static int numberOfLists = 1000;
         static int sequenceLength = 5;
         static int maxNumber = 100;
 
@@ -41,9 +41,9 @@ namespace Tests.NextSequencePrediction
                .Stack(new OutputLayer(1, ActivationType.Softmax))
                .Build();
 
-            network.Load("D:\\testnn\\nextsequencepred.cool");
+            //network.Load("D:\\testnn\\nextsequencepred.cool");
 
-            network.Train(inputs, desired, 100, 0.01f);
+            network.Train(inputs, desired, 1000, 0.01f);
             network.Save("D:\\testnn\\nextsequencepred.cool");
 
             var randomIndices = Enumerable.Range(0, 1000)
