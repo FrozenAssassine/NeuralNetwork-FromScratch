@@ -1,4 +1,5 @@
 ﻿using NNFromScratch.Helper;
+using System.Reflection.Emit;
 
 namespace NNFromScratch.Core.Layers;
 
@@ -12,12 +13,14 @@ public class OutputLayer : BaseLayer
 
     public override void Load(BinaryReader br)
     {
-        LayerSaveLoadFunction.Load(this, br);
+        LayerSaveLoadHelper.LoadData(Biases, br);
+        LayerSaveLoadHelper.LoadData(Weights, br);
     }
 
     public override void Save(BinaryWriter bw)
     {
-        LayerSaveLoadFunction.Save(this, bw);
+        LayerSaveLoadHelper.SaveData(Biases, bw);
+        LayerSaveLoadHelper.SaveData(Weights, bw);
     }
 
     public override void Summary()
@@ -41,6 +44,11 @@ public class OutputLayer : BaseLayer
 
     public override void Train(float[] desiredValues, float learningRate)
     {
+        if(desiredValues.Length != this.Size)
+        {
+            throw new Exception("Output layer count does not match provided data");
+        }
+
         //output -> error
         Parallel.For(0, this.Size, (idx) =>
         {
