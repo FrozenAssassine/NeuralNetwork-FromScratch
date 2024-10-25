@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NNFromScratch.Core.Layers;
+﻿namespace NNFromScratch.Core.Layers;
 
 public class PoolingLayer : BaseLayer
 {
@@ -8,21 +6,20 @@ public class PoolingLayer : BaseLayer
     public int Stride { get; }
     public int inputHeight;
     public int inputWidth;
-
-    public PoolingLayer(int inputWidth, int inputHeight, int poolSize, int stride)
+    private int pooledHeight;
+    private int pooledWidth;
+    
+    public PoolingLayer(int inputWidth, int inputHeight, int featureMapX, int featureMapY, int poolSize, int stride)
     {
         this.PoolSize = poolSize;
         this.Stride = stride;
         this.inputWidth = inputWidth;
         this.inputHeight = inputHeight;
-    }
 
-    public int CalculateDenseLayerNeurons(int featureMapX, int featureMapY, int depth)
-    {
-        int outputWidth = (featureMapX - PoolSize) / Stride + 1;
-        int outputHeight = (featureMapY - PoolSize) / Stride + 1;
-
-        return outputWidth * outputHeight * depth;
+        //calculate the output dimensions:
+        this.pooledWidth = (featureMapX - PoolSize) / Stride + 1;
+        this.pooledHeight = (featureMapY - PoolSize) / Stride + 1;
+        this.Size = pooledWidth * pooledHeight;
     }
 
     public override void FeedForward()
@@ -32,13 +29,9 @@ public class PoolingLayer : BaseLayer
             throw new Exception("Previous layer has to be ConvolutionalLayer");
         }
 
-        int outputWidth = (inputWidth - PoolSize) / Stride + 1;
-        int outputHeight = (inputHeight - PoolSize) / Stride + 1;
-        float[] output = new float[outputWidth * outputHeight];
-
-        Parallel.For(0, outputHeight, (idy) => //for (int y = 0; y < outputHeight; y++)
+        Parallel.For(0, pooledHeight, (idy) => //for (int y = 0; y < outputHeight; y++)
         {
-            for (int x = 0; x < outputWidth; x++)
+            for (int x = 0; x < pooledWidth; x++)
             {
                 float sum = 0;
                 int count = 0;
@@ -58,16 +51,14 @@ public class PoolingLayer : BaseLayer
                     }
                 }
 
-                output[idy * outputWidth + x] = sum / count;
+                this.NeuronValues[idy * pooledWidth + x] = sum / count;
             }
         });
-
-        this.NeuronValues = output; //set for dense layer
     }
 
     public override void Initialize()
     {
-
+        this.NeuronValues = new float[this.Size];
     }
 
     public override void InitializeCuda(int index)
@@ -87,7 +78,7 @@ public class PoolingLayer : BaseLayer
 
     public override void Summary()
     {
-        throw new NotImplementedException();
+        Console.WriteLine($"Pooling Layer of {this.Size} and outputSize of ({this.pooledWidth}x{this.pooledHeight})");
     }
 
     public override void Train(float[] desiredValues, float learningRate)

@@ -36,7 +36,8 @@ namespace NNFromScratch.Core.Layers
 
         public override void FeedForward()
         {
-            Parallel.For(0, this.Size, (idx) => {
+            Parallel.For(0, this.Size, (idx) =>
+            {
                 float sum = 0.0f;
                 int index = idx * this.PreviousLayer.Size;
                 for (int j = 0; j < this.PreviousLayer.Size; j++)
@@ -61,7 +62,7 @@ namespace NNFromScratch.Core.Layers
 
         public override void Summary()
         {
-            Console.WriteLine($"Dense Layer of {Size} Neurons and {Weights.Length} Weights");
+            Console.WriteLine($"Dense Layer of {this.Size} Neurons and {this.Weights.Length} Weights");
         }
 
         public override void Initialize()

@@ -16,15 +16,26 @@ public class ConvolutionalLayer : BaseLayer
     public int stride;
     public int filterHeight = 3;
     public int filterWidth = 3;
+    public int padding = 0;
 
-    public ConvolutionalLayer(int imageWidth, int imageHeight, int stride, int featureMapX, int featureMapY, ConvolutionalFilterType[] filters)
+    public ConvolutionalLayer(int imageWidth, int imageHeight, int stride, ConvolutionalFilterType[] filters)
     {
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
         this.filters = filters;
         this.stride = stride;
-        this.featureMapX = featureMapX;
-        this.featureMapY = featureMapY;
+
+        var fm = CalculateFeatureMapSize();
+        this.featureMapX = fm.width;
+        this.featureMapY = fm.height;
+    }
+
+    public (int width, int height) CalculateFeatureMapSize()
+    {
+        int featureMapWidth = (imageWidth - filterWidth + 2 * padding) / stride + 1;
+        int featureMapHeight = (imageHeight - filterHeight + 2 * padding) / stride + 1;
+
+        return (featureMapWidth, featureMapHeight);
     }
 
     public override void FeedForward()
@@ -36,10 +47,7 @@ public class ConvolutionalLayer : BaseLayer
     }
     public override void Initialize()
     {
-        int outputRows = imageHeight - filterHeight + 1;
-        int outputCols = imageWidth - filterWidth + 1;
-        featureMap = new float[(outputRows * outputCols * 3) * filters.Length];
-
+        featureMap = new float[featureMapX * featureMapY * 3 * filters.Length];
     }
 
     public override void InitializeCuda(int index)
@@ -61,7 +69,10 @@ public class ConvolutionalLayer : BaseLayer
     }
     public override void Summary()
     {
-        throw new NotImplementedException();
+        Console.WriteLine($"Convolutional Layer of {this.featureMap.Length} features.");
+        Console.WriteLine($"\tFeatureMap: ({featureMapX}|{featureMapY})");
+        Console.WriteLine($"\tImage: ({imageWidth}|{imageHeight})");
+        Console.WriteLine($"\tFilter: {string.Join(", ", filters)}");
     }
     public override void Train(float[] desiredValues, float learningRate)
     {
@@ -189,30 +200,31 @@ public class ConvolutionalLayer : BaseLayer
         }
         return sum;
     }
-    private float[] ConvolutionRGB(float[] image, int imageWidth, int imageHeight, float[] filter)
+    public float[] ConvolutionRGB(float[] filter, float[] image)
     {
-        int outputRows = imageHeight - filterHeight + 1;
-        int outputCols = imageWidth - filterWidth + 1;
-        float[] output = new float[outputRows * outputCols * 3]; //r,g,b
+        var (outputCols, outputRows) = CalculateFeatureMapSize();
+        float[] output = new float[outputRows * outputCols * 3]; // RGB channels
 
-        //iterate over every pixel of the image and apply filter
+        // iterate over each position in the feature map
         Parallel.For(0, outputRows, idx =>
         {
             for (int j = 0; j < outputCols; j++)
             {
+                // Process convolution on RGB channels
                 float[] imageSection = new float[filterWidth * filterHeight * 3];
                 for (int x = 0; x < filterHeight; x++)
                 {
                     for (int y = 0; y < filterWidth; y++)
                     {
-                        for (int channel = 0; channel < 3; channel++)
+                        for (int channel = 0; channel < 3; channel++) // for R, G, B channels
                         {
                             imageSection[(x * filterWidth + y) * 3 + channel] =
-                                image[((idx + x) * imageWidth + (j + y)) * 3 + channel];
+                                image[((idx * stride + x) * imageWidth + (j * stride + y)) * 3 + channel];
                         }
                     }
                 }
 
+                // Apply convolution and store result in output
                 for (int channel = 0; channel < 3; channel++)
                 {
                     output[((idx * outputCols) + j) * 3 + channel] = ElementWiseMultiplyRGB(imageSection, filter, filterWidth, filterHeight, channel);
@@ -226,9 +238,9 @@ public class ConvolutionalLayer : BaseLayer
     {
         for (int i = 0; i < filters.Length; i++)
         {
-            var extractedFeatures = ConvolutionRGB(image, imageWidth, imageHeight, GetFilterForType(filters[i]));
+            var extractedFeatures = ConvolutionRGB(GetFilterForType(filters[i]), image);
 
-            int offset = extractedFeatures.Length * i; //check whether correct?
+            int offset = (featureMapX * featureMapY * 3) * i; //check whether correct?
             Array.Copy(extractedFeatures, 0, featureMap, offset, extractedFeatures.Length);
         }
     }

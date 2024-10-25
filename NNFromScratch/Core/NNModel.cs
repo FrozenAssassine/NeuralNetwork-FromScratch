@@ -56,7 +56,7 @@ public class NNModel
         return prediction;
     }
 
-    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, int loggingInterval = 100, float evaluatePercent = 10)
+    public void Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, int loggingInterval = 100, float evaluatePercent = 10)
     {
         if (inputs[0].Length != nn.allLayer[0].Size)
             throw new Exception("Input size does not match input layer count");
@@ -69,7 +69,7 @@ public class NNModel
         AccuracyCalculator accCalc = new AccuracyCalculator(nn);
 
         Console.WriteLine(new string('-', 50) + "\n");
-        float[] accuracys = new float[epochs];
+
         var trainingTime = BenchmarkExtension.Benchmark(() =>
         {
             Stopwatch epochTime = new Stopwatch();
@@ -118,8 +118,6 @@ public class NNModel
 
         Console.WriteLine(new string('=', 50) + "\n");
         Console.WriteLine($"Training took: {trainingTime}\n");
-
-        return accuracys;
     }
 
     public void Save(string path)

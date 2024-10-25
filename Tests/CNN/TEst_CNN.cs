@@ -15,8 +15,6 @@ internal class Test_CNN
     const int PixelDepth = 3; //rgb
     const int ImageCount = 1000; //total of 17033 images
     const int OutputTypes = 6; //Buildings, Forests, Mountains, Glacier, Street, Sea
-    const int featureMapX = 28;
-    const int featureMapY = 28;
 
     public static void Run()
     {
@@ -37,22 +35,24 @@ internal class Test_CNN
 
 
         var filters = new ConvolutionalFilterType[] { ConvolutionalFilterType.SobelX, ConvolutionalFilterType.SobelY, ConvolutionalFilterType.Laplacian, ConvolutionalFilterType.Sharpening };
-        var poolingLayer = new PoolingLayer(ImageWidth, ImageHeight, 3, filters.Length);
-        var denseLayerNeurons = poolingLayer.CalculateDenseLayerNeurons(featureMapX, featureMapX, PixelDepth);
-        poolingLayer.Size = denseLayerNeurons;
+        var convLayer = new ConvolutionalLayer(ImageWidth, ImageHeight, 1, filters);
+        var poolLayer = new PoolingLayer(ImageWidth, ImageHeight, convLayer.featureMapX, convLayer.featureMapY, 3, filters.Length);
+
 
         //create the neural network:
         var network = NetworkBuilder.Create()
             .Stack(new InputLayer(ImageWidth * ImageHeight * PixelDepth))
-            .Stack(new ConvolutionalLayer(ImageWidth, ImageHeight, 1, featureMapX, featureMapY, filters))
-            .Stack(poolingLayer)
-            .Stack(new DenseLayer(denseLayerNeurons, ActivationType.Relu))
+            .Stack(convLayer)
+            .Stack(poolLayer)
+            .Stack(new DenseLayer(poolLayer.Size, ActivationType.Relu))
             .Stack(new OutputLayer(6, ActivationType.Softmax))
             .Build(false);
 
-        network.Load("D:\\imageclassification2.cool");
+        network.Summary();
 
-        network.Train(images, desired, 25, 0.03f);
+        //network.Load("D:\\imageclassification2.cool");
+
+        network.Train(images, desired, 3, 0.1f);
 
         Console.WriteLine("Press enter to save");
         Console.ReadLine();
