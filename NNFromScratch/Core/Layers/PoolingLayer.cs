@@ -1,4 +1,6 @@
-﻿namespace NNFromScratch.Core.Layers;
+﻿using System.Drawing;
+
+namespace NNFromScratch.Core.Layers;
 
 public class PoolingLayer : BaseLayer
 {
@@ -19,7 +21,7 @@ public class PoolingLayer : BaseLayer
         //calculate the output dimensions:
         this.pooledWidth = (featureMapX - PoolSize) / Stride + 1;
         this.pooledHeight = (featureMapY - PoolSize) / Stride + 1;
-        this.Size = pooledWidth * pooledHeight;
+        this.Size = pooledWidth * pooledHeight * 3;
     }
 
     public override void FeedForward()
@@ -29,31 +31,40 @@ public class PoolingLayer : BaseLayer
             throw new Exception("Previous layer has to be ConvolutionalLayer");
         }
 
-        Parallel.For(0, pooledHeight, (idy) => //for (int y = 0; y < outputHeight; y++)
+        Parallel.For(0, pooledHeight, (idy) =>
         {
             for (int x = 0; x < pooledWidth; x++)
             {
-                float sum = 0;
-                int count = 0;
-
-                for (int j = 0; j < PoolSize; j++)
+                for (int channel = 0; channel < 3; channel++)
                 {
-                    for (int i = 0; i < PoolSize; i++)
-                    {
-                        int inputX = x * Stride + i;
-                        int inputY = idy * Stride + j;
+                    float sum = 0;
+                    int count = 0;
 
-                        if (inputX < inputWidth && inputY < inputHeight)
+                    for (int j = 0; j < PoolSize; j++)
+                    {
+                        for (int i = 0; i < PoolSize; i++)
                         {
-                            sum += convLayer.featureMap[inputY * inputWidth + inputX];
-                            count++;
+                            int inputX = x * Stride + i;
+                            int inputY = idy * Stride + j;
+
+                            // Calculate the index for the specific color channel in the feature map
+                            int index = (inputY * inputWidth + inputX) * 3 + channel;
+
+                            if (inputX < inputWidth && inputY < inputHeight)
+                            {
+                                sum += convLayer.featureMap[index];
+                                count++;
+                            }
                         }
                     }
-                }
 
-                this.NeuronValues[idy * pooledWidth + x] = sum / count;
+                    // Store the average (pooled) value for this region in the output NeuronValues
+                    int outputIndex = (idy * pooledWidth + x) * 3 + channel;
+                    this.NeuronValues[outputIndex] = sum / count;
+                }
             }
         });
+        //FeatureMapToImage.SaveImagePooling(this.NeuronValues, pooledWidth, pooledHeight, "C:\\Users\\Juliu\\Desktop\\pooled.png") ;
     }
 
     public override void Initialize()

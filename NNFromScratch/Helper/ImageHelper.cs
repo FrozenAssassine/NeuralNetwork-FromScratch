@@ -1,16 +1,18 @@
 ﻿using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
+using System.Diagnostics;
 
 namespace NNFromScratch.Helper
 {
     public class ImageHelper
     {
-        public static float[][] GetImages(string folderPath, int count, int width, int height)
+        public static float[][] GetImages(string folderPath, int count, int width, int height, int start = 0)
         {
             float[][] images = new float[count][];
             int index = 0;
-            foreach (var file in Directory.EnumerateFiles(folderPath).Take(count))
+            foreach (var file in Directory.EnumerateFiles(folderPath).Skip(start).Take(count))
             {
+                Console.WriteLine("FILE: " + file);
                 images[index++] = GetImagePixel_RGB(file, width, height);
             }
             return images;
