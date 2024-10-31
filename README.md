@@ -17,6 +17,7 @@ More complex image classification is in progress. I trained it with 2000 rgb ima
 
 ## ❗Info
 At the current point I would not recommend this in any production environment, for me it's just a fun project to learn more about CUDA and Neural Networks.
+Also I tried to implement Convolution and Pooling layer from scratch, but failed in the back propagation. Currently they are not working in any way😢
 
 
 ## 🛠️ Features
