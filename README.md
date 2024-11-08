@@ -48,3 +48,22 @@ Overall, this resulted in a 10-fold increase in performance.
    (https://developer.nvidia.com/cuda-downloads)
 4. Open the solution file (`.sln`) in Visual Studio.
 5. Build and run the project.
+
+## Example code
+```cs
+//XOR prediction
+var nnmodel = NetworkBuilder.Create()
+    .Stack(new InputLayer(2))
+    .Stack(new DenseLayer(4, ActivationType.Sigmoid))
+    .Stack(new OutputLayer(1, ActivationType.Sigmoid))
+    .Build();
+
+nnmodel.Summary();
+
+float[][] inputs = new float[][] { new float[] { 0, 0 }, new float[] { 0, 1 }, new float[] { 1, 0 }, new float[] { 1, 1 } };
+float[][] desired = new float[][] { new float[] { 0 }, new float[] { 1 }, new float[] { 1 }, new float[] { 0 } };
+nnmodel.Train(inputs, desired, 15900, 0.01f, 1000, 100);
+
+var prediction = nnmodel.Predict(new float[] { 0, 0 });
+Console.WriteLine("Prediction: " + MathHelper.GetMaximumIndex(prediction));
+```
