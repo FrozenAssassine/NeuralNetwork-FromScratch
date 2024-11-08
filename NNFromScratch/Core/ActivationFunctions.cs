@@ -12,19 +12,19 @@ namespace NNFromScratch.Core
         {
             switch (activation)
             {
-                case ActivationType.Sigmoid: //sigmoid
+                case ActivationType.Sigmoid:
                     return 1.0f / (1.0f + MathF.Exp(-x));
-                case ActivationType.Relu: //relu
+                case ActivationType.Relu:
                     return MathF.Max(0.0f, x);
-                case ActivationType.Softmax: //softmax
+                case ActivationType.Softmax:
                     return MathF.Exp(x) / (1.0f + MathF.Exp(x));
-                case ActivationType.TanH: //Tanh
+                case ActivationType.TanH:
                     return MathF.Tanh(x);
-                case ActivationType.LeakyRelu: // Leaky ReLU
+                case ActivationType.LeakyRelu:
                     return x > 0.0f ? x : 0.01f * x;
-                case ActivationType.ELU: // ELU
+                case ActivationType.ELU:
                     return x > 0.0f ? x : (MathF.Exp(x) - 1.0f);
-                case ActivationType.Swish: // Swish
+                case ActivationType.Swish:
                     return x / (1.0f + MathF.Exp(-x));
                 default:
                     return x;
@@ -35,19 +35,19 @@ namespace NNFromScratch.Core
         {
             switch (activation)
             {
-                case ActivationType.Sigmoid: //sigmoid deriv
+                case ActivationType.Sigmoid:
                     return x * (1 - x);
-                case ActivationType.Relu: //relu deriv
+                case ActivationType.Relu:
                     return x > 0.0f ? 1.0f : 0.0f;
-                case ActivationType.Softmax: //softmax deriv
+                case ActivationType.Softmax:
                     return x * (1.0f - x);
-                case ActivationType.TanH: //Tanh
+                case ActivationType.TanH:
                     return 1 - MathF.Pow(MathF.Tanh(x), 2);
-                case ActivationType.LeakyRelu: // Leaky ReLU deriv
+                case ActivationType.LeakyRelu:
                     return x > 0.0f ? 1.0f : 0.01f;
-                case ActivationType.ELU: // ELU deriv
+                case ActivationType.ELU:
                     return x > 0.0f ? 1.0f : (x + 1.0f);
-                case ActivationType.Swish: // Swish deriv
+                case ActivationType.Swish:
                     float sigma = 1.0f / (1.0f + MathF.Exp(-x));
                     return sigma * (1.0f + x * (1.0f - sigma));
                 default:

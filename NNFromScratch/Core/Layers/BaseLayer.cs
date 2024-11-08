@@ -20,7 +20,7 @@ public abstract class BaseLayer
     public abstract void Save(BinaryWriter bw);
     public abstract void Load(BinaryReader br);
         
-    public abstract void Initialize();
+    public abstract void Initialize(int inputCount, int outputCount);
 
     public abstract void InitializeCuda(int index);
 };

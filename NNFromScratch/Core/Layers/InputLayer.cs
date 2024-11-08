@@ -15,10 +15,11 @@ namespace NNFromScratch.Core.Layers
             //nothing to feed forward here
         }
 
-        public override void Initialize()
+        public override void Initialize(int inputCount, int outputCount)
         {
-            LayerInitialisationHelper.InitializeLayer(this);
+            LayerInitialisationHelper.InitializeLayer(this, inputCount, outputCount);
         }
+
 
         public override void InitializeCuda(int index)
         {

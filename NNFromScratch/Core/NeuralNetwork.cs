@@ -14,8 +14,8 @@ internal class NeuralNetwork
         {
             allLayer[i].NextLayer = i + 1 < allLayer.Length ? allLayer[i + 1] : null;
             allLayer[i].PreviousLayer = i - 1 < 0 ? null : allLayer[i - 1];
-            
-            allLayer[i].Initialize();
+
+            allLayer[i].Initialize(allLayer[0].Size, allLayer[allLayer.Length - 1].Size);
         }
     }
 

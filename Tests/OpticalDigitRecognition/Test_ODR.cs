@@ -20,14 +20,13 @@ public class Test_ODR
         //create the neural network:
         var network = NetworkBuilder.Create()
             .Stack(new InputLayer(imageWidth * imageHeight))
-            .Stack(new DenseLayer(512, ActivationType.Sigmoid))
             .Stack(new DenseLayer(256, ActivationType.Sigmoid))
             .Stack(new OutputLayer(10, ActivationType.Softmax))
             .Build(true);
 
         network.Summary();
         //network.Load("D:\\odr.cool");
-        network.Train(imageData.x, imageData.y, epochs: 3, learningRate: 0.1f, 1000);
+        network.Train(imageData.x, imageData.y, epochs: 5, learningRate: 0.1f, 1000);
 
         Console.WriteLine(BenchmarkExtension.Benchmark(() =>
         {

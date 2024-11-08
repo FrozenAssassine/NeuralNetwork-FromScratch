@@ -56,7 +56,15 @@ public class NNModel
         return prediction;
     }
 
-    public float[] Train(float[][] inputs, float[][] desired, int epochs, float learningRate = 0.1f, int loggingInterval = 100, float evaluatePercent = 10)
+    public float[] Train(
+        float[][] inputs, 
+        float[][] desired, 
+        int epochs, 
+        float learningRate = 0.1f, 
+        int loggingInterval = 100, 
+        int epochInterval = 1, 
+        float evaluatePercent = 10
+        )
     {
         if (inputs[0].Length != nn.allLayer[0].Size)
             throw new Exception("Input size does not match input layer count");
@@ -91,6 +99,7 @@ public class NNModel
 
                     lossCalc.Calculate(desired[i]);
 
+                    //use this, when each epoch takes longer due to more items that need to compute
                     if ((i + 1) % loggingInterval == 0)
                     {
                         stepTimeSW.Stop();
@@ -100,16 +109,21 @@ public class NNModel
                         stepTimeSW.Restart();
                     }
                 }
-                
-                accCalc.Calculate(inputs, desired);
 
-                Console.WriteLine(new string('-', 50));
-                Console.WriteLine($"Epoch {e + 1} took {epochTime.ElapsedMilliseconds}ms; " + (averageStepTime > 0 ? $"avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step" : ""));
-                lossCalc.PrintLoss();
-                accCalc.PrintAccuracy();
+                //print epoch every x epochs (default: 100) => for fast training
+                if ((e + 1) % epochInterval == 0)
+                {
+                    accCalc.Calculate(inputs, desired, 100);
 
-                if (e != epochs - 1)
                     Console.WriteLine(new string('-', 50));
+                    Console.WriteLine($"Epoch {e + 1} took {epochTime.ElapsedMilliseconds}ms; " + (averageStepTime > 0 ? $"avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step" : ""));
+                    lossCalc.PrintLoss();
+                    accCalc.PrintAccuracy();
+
+                    //dont print the last line after training => looks weird :D
+                    if (e != epochs - 1)
+                        Console.WriteLine(new string('-', 50));
+                }
             }
         });
         

@@ -17,7 +17,7 @@ internal class Test_XOR
 
         float[][] inputs = new float[][] { new float[] { 0, 0 }, new float[] { 0, 1 }, new float[] { 1, 0 }, new float[] { 1, 1 } };
         float[][] desired = new float[][] { new float[] { 0 }, new float[] { 1 }, new float[] { 1 }, new float[] { 0 } };
-        nnmodel.Train(inputs, desired, 15900, 0.01f, 100);
+        nnmodel.Train(inputs, desired, 15900, 0.01f, 1000, 100);
 
         var predict = nnmodel.Predict(new float[] { 0, 0 });
         foreach (var pred in predict)
