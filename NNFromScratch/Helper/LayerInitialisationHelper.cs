@@ -20,6 +20,14 @@ internal class LayerInitialisationHelper
             weights[i] = MathHelper.RandomWeight();
         }
     }
+
+    public static void FillRandom(float[] array)
+    {
+        for (int i = 0; i < array.Length; i++)
+        {
+            array[i] = MathHelper.RandomWeight();
+        }
+    }
     
     public static void InitializeLayer(BaseLayer layer)
     {

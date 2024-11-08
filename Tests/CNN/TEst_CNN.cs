@@ -13,7 +13,7 @@ internal class Test_CNN
     const int ImageWidth = 150;
     const int ImageHeight = 150;
     const int PixelDepth = 3; //rgb
-    const int ImageCount = 50; //total of 17033 images
+    const int ImageCount = 500; //total of 17033 images
     const int OutputTypes = 6; //Buildings, Forests, Mountains, Glacier, Street, Sea
 
     public static void Run()
@@ -34,9 +34,8 @@ internal class Test_CNN
         }
 
 
-        var filters = new ConvolutionalFilterType[] { ConvolutionalFilterType.Sharpening,ConvolutionalFilterType.SobelX, ConvolutionalFilterType.SobelY, ConvolutionalFilterType.Laplacian, ConvolutionalFilterType.Embossing };
-        var convLayer = new ConvolutionalLayer(ImageWidth, ImageHeight, 1, filters);
-        var poolLayer = new PoolingLayer(ImageWidth, ImageHeight, convLayer.featureMapX, convLayer.featureMapY, 3, filters.Length);
+        var convLayer = new ConvolutionalLayer(ImageWidth, ImageHeight, 1, 3, 3, 5);
+        var poolLayer = new PoolingLayer(ImageWidth, ImageHeight, convLayer.featureMapX, convLayer.featureMapY, 3, 5);
 
 
         //create the neural network:
@@ -52,7 +51,7 @@ internal class Test_CNN
 
         //network.Load("D:\\imageclassification2.cool");
 
-        network.Train(images, desired, 10, 0.1f);
+        network.Train(images, desired, 10, 0.01f);
 
         Console.WriteLine("Press enter to save");
         Console.ReadLine();

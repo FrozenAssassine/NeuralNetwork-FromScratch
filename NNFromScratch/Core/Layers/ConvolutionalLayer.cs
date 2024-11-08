@@ -9,27 +9,35 @@ namespace NNFromScratch.Core.Layers;
 public class ConvolutionalLayer : BaseLayer
 {
     public float[] featureMap;
+    public float[][] filters; //similar to the weights of a dense layer
+    public float[] errorGradients;
     public int imageWidth;
     public int imageHeight;
-    public float[] errorGradients;
-    public ConvolutionalFilterType[] filters;
     public int featureMapX;
     public int featureMapY;
     public int stride;
     public int filterHeight = 3;
     public int filterWidth = 3;
     public int padding = 0;
+    public int numFilters = 0;
 
-    public ConvolutionalLayer(int imageWidth, int imageHeight, int stride, ConvolutionalFilterType[] filters)
+    public ConvolutionalLayer(int imageWidth, int imageHeight, int stride, int filterWidth, int filterHeight, int numFilters)
     {
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
-        this.filters = filters;
         this.stride = stride;
 
         var fm = CalculateFeatureMapSize();
         this.featureMapX = fm.width;
         this.featureMapY = fm.height;
+
+        this.numFilters = numFilters;
+        filters = new float[numFilters][];
+        for(int i = 0; i< numFilters; i++)
+        {
+            filters[i] = new float[filterWidth * filterHeight * 3];
+            LayerInitialisationHelper.FillRandom(filters[i]);
+        }
     }
 
     public (int width, int height) CalculateFeatureMapSize()
@@ -43,7 +51,7 @@ public class ConvolutionalLayer : BaseLayer
     {
         if (this.PreviousLayer is InputLayer inputLayer)
         {
-            ApplyFilters(inputLayer.NeuronValues, imageWidth, imageHeight, filters);
+            ApplyFilters(inputLayer.NeuronValues);
         }
     }
 
@@ -75,81 +83,91 @@ public class ConvolutionalLayer : BaseLayer
         Console.WriteLine($"Convolutional Layer of {this.featureMap.Length} features.");
         Console.WriteLine($"\tFeatureMap: ({featureMapX}|{featureMapY})");
         Console.WriteLine($"\tImage: ({imageWidth}|{imageHeight})");
-        Console.WriteLine($"\tFilter: {string.Join(", ", filters)}");
+        //Console.WriteLine($"\tFilter: {string.Join(", ", filters)}");
     }
 
     public override void Train(float[] desiredValues, float learningRate)
     {
-        errorGradients = CalculateOutputGradients(NextLayer.NeuronValues, featureMap, 2);
+        errorGradients = CalculateOutputGradients(desiredValues, featureMap);
 
         for (int i = 0; i < filters.Length; i++)
         {
             float[] gradients = CalculateFilterGradient(errorGradients, i);
-            UpdateFilter(gradients, learningRate);
+            UpdateFilter(gradients, learningRate, i); 
         }
-    }
-
-    private void UpdateFilter(float[] filterGradient, float learningRate)
-    {
-        int filterSize = filterGradient.Length;
-        Parallel.For(0, filterSize, idx =>
-        {
-            for (int j = 0; j < featureMap.Length; j++)
-            {
-                featureMap[j] -= learningRate * filterGradient[idx];
-            }
-        });
     }
 
     private float[] CalculateFilterGradient(float[] errorGradient, int filterIndex)
     {
-        float[] filter = GetFilterForType(filters[filterIndex]);
-        int filterSize = filter.Length;
-        int outputWidth = featureMapX;
-        int outputHeight = featureMapY;
+        // Assuming the filter size is defined as filterWidth x filterHeight
+        int filterSize = filters[filterIndex].Length; // Total number of elements in the filter (e.g., 27 for 3x3x3)
         float[] filterGradient = new float[filterSize];
 
-        Parallel.For(0, outputHeight, idx =>
+        int outputWidth = featureMapX;
+        int outputHeight = featureMapY;
+
+        for (int y = 0; y < outputHeight; y++)
         {
-            for (int j = 0; j < outputWidth; j++)
+            for (int x = 0; x < outputWidth; x++)
             {
-                float[] inputSection = ExtractInputSection(this.PreviousLayer.NeuronValues, imageWidth, imageHeight, j, idx);
-                for (int k = 0; k < filterSize; k++)
+                float[] inputSection = ExtractInputSection(this.PreviousLayer.NeuronValues, x, y);
+
+                for (int channel = 0; channel < 3; channel++) // RGB channels
                 {
-                    filterGradient[k] += errorGradient[idx * outputWidth + j] * inputSection[k];
+                    for (int filterY = 0; filterY < filterHeight; filterY++)
+                    {
+                        for (int filterX = 0; filterX < filterWidth; filterX++)
+                        {
+                            int filterIndexOffset = (filterY * filterWidth + filterX) * 3 + channel; // Calculate index in the filter array
+                            if (filterY + y < outputHeight && filterX + x < outputWidth) // Ensure within bounds
+                            {
+                                filterGradient[filterIndexOffset] += errorGradient[y * outputWidth + x] * inputSection[(filterY * filterWidth + filterX) * 3 + channel];
+                            }
+                        }
+                    }
                 }
             }
-        });
+        }
+
         return filterGradient;
     }
 
     private float[] CalculateOutputGradients(float[] desiredValues, float[] featureMap)
     {
-        float[] outputGradients = new float[desiredValues.Length];
+        float[] outputGradients = new float[featureMap.Length];
 
+        // Calculate output layer gradients (difference between actual and desired)
+        float[] outputLayerGradients = new float[desiredValues.Length];
         for (int i = 0; i < desiredValues.Length; i++)
         {
-            outputGradients[i] = desiredValues[i] - featureMap[i];
+            // Assuming a simple derivative for this example; adjust based on activation type
+            outputLayerGradients[i] = (desiredValues[i] - featureMap[i]) * (featureMap[i] > 0 ? 1 : 0.01f);
         }
 
-        float[] fullGradients = new float[this.featureMap.Length];
-        int regionWidth = featureMapX / desiredValues.Length;
-        int regionHeight = featureMapY / desiredValues.Length;
-
-        Parallel.For(0, desiredValues.Length, idx =>
+        // Spread the gradients from the output layer back into the feature map
+        int mapRegionSize = featureMap.Length / desiredValues.Length;
+        for (int i = 0; i < desiredValues.Length; i++)
         {
-            for (int y = 0; y < regionHeight; y++)
+            for (int j = 0; j < mapRegionSize; j++)
             {
-                for (int x = 0; x < regionWidth; x++)
-                {
-                    int featureMapIndex = (idx * regionWidth * regionHeight) + (y * regionWidth + x);
-                    fullGradients[featureMapIndex] += outputGradients[idx];
-                }
+                int mapIndex = i * mapRegionSize + j;
+                outputGradients[mapIndex] = outputLayerGradients[i];
             }
-        });
-        return fullGradients;
+        }
+
+
+        return outputGradients;
     }
-    private float[] ExtractInputSection(float[] inputImage, int inputWidth, int inputHeight, int outputX, int outputY)
+    private void UpdateFilter(float[] filterGradient, float learningRate, int filterIndex)
+    {
+        for (int j = 0; j < filters[filterIndex].Length; j++)
+        {
+            filters[filterIndex][j] += learningRate * filterGradient[j]; // Update filter weights
+        }
+        Console.WriteLine("Updated filter " + filterIndex + ": " + string.Join(", ", filters[filterIndex].Take(5)));
+    }
+
+    private float[] ExtractInputSection(float[] inputImage, int outputX, int outputY)
     {
         //extract 3x3 sections from the image:
         float[] inputSection = new float[filterWidth * filterHeight * 3];
@@ -163,12 +181,9 @@ public class ConvolutionalLayer : BaseLayer
                 for (int channel = 0; channel < 3; channel++) //rgb
                 {
                     int sectionIndex = (y * filterWidth + x) * 3 + channel;
-                    int imageIndex = ((inputY + y) * inputWidth + (inputX + x)) * 3 + channel;
+                    int imageIndex = ((inputY + y) * imageWidth + (inputX + x)) * 3 + channel;
 
-                    //if ((inputX + x) < inputWidth && (inputY + y) < inputHeight)
-                        inputSection[sectionIndex] = inputImage[imageIndex];
-                    //else
-                        //inputSection[sectionIndex] = -1; 
+                    inputSection[sectionIndex] = inputImage[imageIndex];
                 }
             }
         }
@@ -190,29 +205,28 @@ public class ConvolutionalLayer : BaseLayer
         }
         return sum;
     }
-    private void ApplyFilters(float[] image, int imageWidth, int imageHeight, ConvolutionalFilterType[] filterType)
+    private void ApplyFilters(float[] image)
     {
-        for (int i = 0; i < filters.Length; i++)
+        for (int i = 0; i < numFilters; i++)
         {
-            ConvolutionRGB(GetFilterForType(filters[i]), image, i);
+            ConvolutionRGB(filters[i], image, i);
             //FeatureMapToImage.SaveImage(featureMap, i * (featureMapX * featureMapY * 3), featureMapX, featureMapY, $"C:\\Users\\juliu\\Desktop\\image{i}.png");
         }
     }
     private void ConvolutionRGB(float[] filter, float[] image, int filterIndex)
     {
-        var (outputCols, outputRows) = CalculateFeatureMapSize();
         int lastIDX = -1;
-        for (int row = 0; row < outputRows; row++)
+        for (int x = 0; x < featureMapX; x++)
         {
-            for (int col = 0; col < outputCols; col++)
+            for (int y = 0; y < featureMapY; y++)
             {
                 for (int channel = 0; channel < 3; channel++)  // Iterate over R, G, B channels
                 {
                     // Calculate the output index in the featureMap for the current position and channel
-                    int outputIdx = ((row * outputCols) + col) * 3 + channel
-                                    + filterIndex * outputCols * outputRows * 3;
+                    int outputIdx = ((x * featureMapY) + y) * 3 + channel
+                                    + filterIndex * featureMapY * featureMapX * 3;
 
-                    var inputSection = ExtractInputSection(image, imageWidth, imageHeight, col, row);
+                    var inputSection = ExtractInputSection(image, y, x);
 
                     // Perform element-wise multiplication and store the result directly in featureMap
                     featureMap[outputIdx] = ElementWiseMultiplyRGB(
@@ -224,7 +238,8 @@ public class ConvolutionalLayer : BaseLayer
             }
         }
     }
-    private float[] GetFilterForType(ConvolutionalFilterType filterType)
+
+    /*private float[] GetFilterForType(ConvolutionalFilterType filterType)
     {
         switch (filterType)
         {
@@ -241,7 +256,7 @@ public class ConvolutionalLayer : BaseLayer
             default:
                 throw new ArgumentException("Unknown filter in Convolutional layer");
         }
-    }
+    }*/
 }
 
 public class FeatureMapToImage
