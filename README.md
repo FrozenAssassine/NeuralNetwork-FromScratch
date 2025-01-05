@@ -24,7 +24,10 @@ Also I tried to implement Convolution and Pooling layer from scratch, but failed
 - **Optical Digit Recognition (ODR)**: Trained with the MNIST dataset of 60,000 images.
 - **XOR Test**: A simple test to demonstrate the neural network's basic functionality.
 - **CUDA Support**: Accelerates neural network training using GPU resources.
-### 📎See also [DeepReinforcementLearning](https://github.com/FrozenAssassine/DeepReinforcementLearning) from scratch using this project
+
+### 📎See also 
+- [Deep reinforcement learning](https://github.com/FrozenAssassine/DeepReinforcementLearning) from scratch using this project
+- [ESP32 & Arduino](https://github.com/FrozenAssassine/NeuralNetwork-Arduino) running XOR-Demo with a simplified version of this project
 
 
 ## 📊 Benchmarks
