@@ -29,6 +29,7 @@ Also I tried to implement Convolution and Pooling layer from scratch, but failed
 - [Deep reinforcement learning](https://github.com/FrozenAssassine/DeepReinforcementLearning) from scratch using this project
 - [ESP32 & Arduino](https://github.com/FrozenAssassine/NeuralNetwork-Arduino) running XOR-Demo with a simplified version of this project
 
+- [Interactive Demo](https://frozenassassine.de/nn/xor?ref=github) on my website
 
 ## 📊 Benchmarks
 | Training Details | GPU (CUDA, RTX 3050) | CPU (i9-10900) | (CPU) Ryzen 5 3500U |
