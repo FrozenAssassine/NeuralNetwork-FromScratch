@@ -57,7 +57,7 @@ __global__ void output_WeightsBiases(float* errors, float* neuronValues, float* 
         for (int j = 0; j < previousLayerSize; j++) {
             atomicAdd(&weights[weightIndex + j], derivNeuronVal * prevNeuronValues[j]);
         }
-        atomicAdd(&biases[idx], learningRate * errors[idx] * ActivationFunctions::ActivationDeriv(neuronValues[idx], activationFunction));
+        atomicAdd(&biases[idx], derivNeuronVal);
     }
 }
 

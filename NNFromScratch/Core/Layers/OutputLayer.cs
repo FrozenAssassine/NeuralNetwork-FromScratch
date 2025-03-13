@@ -65,7 +65,7 @@ public class OutputLayer : BaseLayer
             {
                 this.Weights[weightIndex + j] += derivNeuronVal * this.PreviousLayer.NeuronValues[j];
             }
-            this.Biases[idx] += learningRate * this.Errors[idx] * ActivationFunctions.ActivationDeriv(this.NeuronValues[idx], this.ActivationFunction);
+            this.Biases[idx] += derivNeuronVal;
         });
     }
 
