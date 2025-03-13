@@ -78,8 +78,7 @@ extern "C" __declspec(dllexport) float* Predict(float* data, float* prediction) 
 
     FeedForward();
 
-    BaseLayer * outLayer = gpu_allLayer[allLayerCount - 1];
-    cudaMemcpy(prediction, outLayer->NeuronValues, sizeof(outLayer->Size) * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(prediction, gpu_allLayer[allLayerCount - 1]->NeuronValues, cpu_allLayer[allLayerCount - 1]->Size * sizeof(float), cudaMemcpyDeviceToHost);
 }
 
 extern "C" __declspec(dllexport) void Init(int totalLayers) {
