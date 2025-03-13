@@ -80,6 +80,8 @@ public class NNModel
         float[] accuracys = new float[epochs];
         var trainingTime = BenchmarkExtension.Benchmark(() =>
         {
+            int trainDataCount = (int)(inputs.Length * (100 - evaluatePercent)) / 100;
+
             Stopwatch epochTime = new Stopwatch();
             Stopwatch stepTimeSW = new Stopwatch();
             for (int e = 0; e < epochs; e++)
@@ -90,7 +92,7 @@ public class NNModel
                 lossCalc.NextEpoch();
                 accCalc.NextEpoch();
 
-                for (int i = 0; i < inputs.Length; i++)
+                for (int i = 0; i < trainDataCount; i++)
                 {
                     if(useCuda)
                         CudaAccel.Train(inputs[i], desired[i], inputs.Length, learningRate);
@@ -105,7 +107,7 @@ public class NNModel
                         stepTimeSW.Stop();
 
                         averageStepTime += stepTimeSW.ElapsedMilliseconds;
-                        Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1}/{inputs.Length}; ({stepTimeSW.ElapsedMilliseconds}ms, {stepTimeSW.ElapsedTicks}ticks)");
+                        Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1}/{trainDataCount}; ({stepTimeSW.ElapsedMilliseconds}ms, {stepTimeSW.ElapsedTicks}ticks)");
                         stepTimeSW.Restart();
                     }
                 }
@@ -113,7 +115,7 @@ public class NNModel
                 //print epoch every x epochs (default: 100) => for fast training
                 if ((e + 1) % epochInterval == 0)
                 {
-                    accCalc.Calculate(inputs, desired, 100);
+                    accCalc.Calculate(inputs, desired, trainDataCount, useCuda);
 
                     Console.WriteLine(new string('-', 50));
                     Console.WriteLine($"Epoch {e + 1} took {epochTime.ElapsedMilliseconds}ms; " + (averageStepTime > 0 ? $"avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step" : ""));

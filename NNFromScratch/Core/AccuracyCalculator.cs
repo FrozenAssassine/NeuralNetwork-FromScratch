@@ -14,14 +14,22 @@ internal class AccuracyCalculator
     {
         this.nn = nn;
     }
-    public void Calculate(float[][] inputs, float[][] desired, int percent = 10)
+    public void Calculate(float[][] inputs, float[][] desired, int startIndex = 0, bool cuda = false)
     {
-        int iterations = (int)(inputs.Length * (percent / 100f));
-        for (int i = 0; i < iterations; i++)
+        float[] prediction = new float[10];
+        for (int i = startIndex; i < inputs.Length; i++)
         {
-            if (MathHelper.GetMaximumIndex(nn.FeedForward_CPU(inputs[i])) == MathHelper.GetMaximumIndex(desired[i]))
-                correctCounter++;
-
+            if (cuda)
+            {
+                CudaAccel.Predict(inputs[i], prediction);
+                if (MathHelper.GetMaximumIndex(prediction) == MathHelper.GetMaximumIndex(desired[i]))
+                    correctCounter++;
+            }
+            else
+            {
+                if (MathHelper.GetMaximumIndex(nn.FeedForward_CPU(inputs[i])) == MathHelper.GetMaximumIndex(desired[i]))
+                    correctCounter++;
+            }
             totalCounter++;
         }
     }
