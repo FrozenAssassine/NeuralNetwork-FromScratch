@@ -11,33 +11,33 @@ public class Test_ODR
 {
     public static void Run()
     {
-        var imageData = MNistLoader.LoadFromFile(".\\datasets\\train-images.idx3-ubyte", ".\\datasets\\train-labels.idx1-ubyte");
-        //var imageData = MNistLoader.LoadFromFile(".\\datasets\\t10k-images.idx3-ubyte", ".\\datasets\\t10k-labels.idx1-ubyte");
-        int[] digits = new int[imageData.y.Length];
-        int imageWidth = imageData.imageWidth;
-        int imageHeight = imageData.imageHeight;
+        var trainData = MNistLoader.LoadFromFile(".\\datasets\\train-images.idx3-ubyte", ".\\datasets\\train-labels.idx1-ubyte");
+        //var trainData = MNistLoader.LoadFromFile(".\\datasets\\t10k-images.idx3-ubyte", ".\\datasets\\t10k-labels.idx1-ubyte");
+        int[] digits = new int[trainData.y.Length];
+        int imageWidth = trainData.imageWidth;
+        int imageHeight = trainData.imageHeight;
 
         //create the neural network:
         var network = NetworkBuilder.Create()
             .Stack(new InputLayer(imageWidth * imageHeight))
+            .Stack(new DenseLayer(512, ActivationType.Sigmoid))
             .Stack(new DenseLayer(256, ActivationType.Sigmoid))
             .Stack(new OutputLayer(10, ActivationType.Softmax))
             .Build(true);
 
         network.Summary();
         //network.Load("D:\\odr.cool");
-        network.Train(imageData.x, imageData.y, epochs: 5, learningRate: 0.1f, 1000);
+        network.Train(trainData.x, trainData.y, epochs: 10, learningRate: 0.01f, 1000, 1, 5);
 
         Console.WriteLine(BenchmarkExtension.Benchmark(() =>
         {
-            network.Evaluate(imageData.x, imageData.y, false);
+            network.Evaluate(trainData.x, trainData.y, false);
         }));
 
         Console.WriteLine("Press Enter to Save");
         Console.ReadLine();
 
         network.Save("D:\\odr_good.cool");
-
     }
 
     //returns 0 for all colors and 1 for all black colors with alpha of exactly 255
