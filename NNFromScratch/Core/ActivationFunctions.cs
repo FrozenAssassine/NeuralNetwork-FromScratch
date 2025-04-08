@@ -31,6 +31,21 @@ namespace NNFromScratch.Core
             }
         }
 
+        public static float[] Softmax(float[] inputs)
+        {
+            float sum = 0.0f;
+            for (int i = 0; i < inputs.Length; i++)
+            {
+                sum += MathF.Exp(inputs[i]);
+            }
+            float[] output = new float[inputs.Length];
+            for (int i = 0; i < inputs.Length; i++)
+            {
+                output[i] = MathF.Exp(inputs[i]) / sum;
+            }
+            return output;
+        }
+
         public static float ActivationDeriv(float x, ActivationType activation)
         {
             switch (activation)
@@ -42,7 +57,7 @@ namespace NNFromScratch.Core
                 case ActivationType.Softmax:
                     return x * (1.0f - x);
                 case ActivationType.TanH:
-                    return 1 - MathF.Pow(MathF.Tanh(x), 2);
+                    return 1 - x * x;
                 case ActivationType.LeakyRelu:
                     return x > 0.0f ? 1.0f : 0.01f;
                 case ActivationType.ELU:
