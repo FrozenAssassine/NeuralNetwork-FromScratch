@@ -28,7 +28,6 @@ public class Test_ODR
         network.Summary();
         //network.Load("D:\\odr.cool");
         network.Train(trainData.x, trainData.y, epochs: 10, learningRate: 0.01f, 1000, 1, 5);
-
         Console.WriteLine(BenchmarkExtension.Benchmark(() =>
         {
             network.Evaluate(trainData.x, trainData.y, false);

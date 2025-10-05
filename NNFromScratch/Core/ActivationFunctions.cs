@@ -16,8 +16,6 @@ namespace NNFromScratch.Core
                     return 1.0f / (1.0f + MathF.Exp(-x));
                 case ActivationType.Relu:
                     return MathF.Max(0.0f, x);
-                case ActivationType.Softmax:
-                    return MathF.Exp(x) / (1.0f + MathF.Exp(x));
                 case ActivationType.TanH:
                     return MathF.Tanh(x);
                 case ActivationType.LeakyRelu:
@@ -39,8 +37,6 @@ namespace NNFromScratch.Core
                     return x * (1 - x);
                 case ActivationType.Relu:
                     return x > 0.0f ? 1.0f : 0.0f;
-                case ActivationType.Softmax:
-                    return x * (1.0f - x);
                 case ActivationType.TanH:
                     return 1 - MathF.Pow(MathF.Tanh(x), 2);
                 case ActivationType.LeakyRelu:
@@ -54,5 +50,31 @@ namespace NNFromScratch.Core
                     return 0.0f;
             }
         }
+
+
+        public static void ActivationSoftmax(float[] values, int size)
+        {
+            // For numerical stability, subtract max value first
+            float maxVal = values[0];
+            for (int i = 1; i < size; i++)
+            {
+                if (values[i] > maxVal) maxVal = values[i];
+            }
+
+            // Exponentiate shifted values and sum
+            float sum = 0.0f;
+            for (int i = 0; i < size; i++)
+            {
+                values[i] = MathF.Exp(values[i] - maxVal);
+                sum += values[i];
+            }
+
+            // Normalize
+            for (int i = 0; i < size; i++)
+            {
+                values[i] /= sum;
+            }
+        }
+
     }
 }

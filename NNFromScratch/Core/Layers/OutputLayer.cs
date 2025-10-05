@@ -1,4 +1,5 @@
 ﻿using NNFromScratch.Helper;
+using System.Diagnostics;
 using System.Reflection.Emit;
 
 namespace NNFromScratch.Core.Layers;
@@ -28,8 +29,37 @@ public class OutputLayer : BaseLayer
         Console.WriteLine($"Output Layer of {Size} Neurons and {Weights.Length} Weights");
     }
 
+    public void FeedForwardSoftmax()
+    {
+        float[] preActivations = new float[this.Size];
+
+        for (int idx = 0; idx < this.Size; idx++)
+        {
+            float sum = 0.0f;
+            int weightIndex = idx * this.PreviousLayer.Size;
+            for (int j = 0; j < this.PreviousLayer.Size; j++)
+            {
+                sum += this.PreviousLayer.NeuronValues[j] * this.Weights[weightIndex + j];
+            }
+            sum += this.Biases[idx];
+            preActivations[idx] = sum;
+        }
+
+        ActivationFunctions.ActivationSoftmax(preActivations, this.Size);
+
+        Array.Copy(preActivations, this.NeuronValues, this.Size);
+
+        //Debug.WriteLine(string.Join(",", this.NeuronValues));
+
+    }
     public override void FeedForward()
     {
+        if (this.ActivationFunction == ActivationType.Softmax)
+        {
+            FeedForwardSoftmax();
+            return;
+        }
+
         Parallel.For(0, this.Size, (idx) =>
         {
             float sum = 0.0f;
@@ -38,6 +68,7 @@ public class OutputLayer : BaseLayer
             {
                 sum += this.PreviousLayer.NeuronValues[j] * this.Weights[weightIndex + j];
             }
+
             this.NeuronValues[idx] = ActivationFunctions.Activation(sum + this.Biases[idx], this.ActivationFunction);
         });
     }
@@ -58,14 +89,28 @@ public class OutputLayer : BaseLayer
         //output -> weights and biases
         Parallel.For(0, this.Size, (idx) =>
         {
-            float derivNeuronVal = learningRate * this.Errors[idx] * ActivationFunctions.ActivationDeriv(this.NeuronValues[idx], this.ActivationFunction);
-            int weightIndex = idx * this.PreviousLayer.Size;
 
+            float grad;
+            if (this.ActivationFunction == ActivationType.Sigmoid || this.ActivationFunction == ActivationType.Softmax)
+            {
+                //Crossentropy + sigmoid or softmax
+                grad = learningRate * this.Errors[idx];
+            }
+            else
+            {
+                float derivNeuronVal = learningRate * this.Errors[idx] * ActivationFunctions.ActivationDeriv(this.NeuronValues[idx], this.ActivationFunction);
+
+                // MSE + generic activation
+                grad = learningRate * this.Errors[idx] *
+                       ActivationFunctions.ActivationDeriv(this.NeuronValues[idx], this.ActivationFunction);
+            }
+
+            int weightIndex = idx * this.PreviousLayer.Size;
             for (int j = 0; j < this.PreviousLayer.Size; j++)
             {
-                this.Weights[weightIndex + j] += derivNeuronVal * this.PreviousLayer.NeuronValues[j];
+                this.Weights[weightIndex + j] += learningRate * grad * this.PreviousLayer.NeuronValues[j];
             }
-            this.Biases[idx] += derivNeuronVal;
+            this.Biases[idx] += learningRate * grad;
         });
     }
 

@@ -10,7 +10,7 @@ public:
         case 1: //relu
             return fmaxf(0.0f, x);
         case 2: //softmax
-            return expf(x) / (1.0f + expf(x));
+			//throw "Softmax should be applied to a vector, not a single value.";
         case 3: //Tanh
             return tanhf(x);
         case 4: // Leaky ReLU
@@ -31,7 +31,7 @@ public:
         case 1: //relu deriv
             return x > 0.0f ? 1.0f : 0.0f;
         case 2: //softmax deriv
-            return x * (1.0f - x);
+            //throw "Softmax should be applied to a vector, not a single value.";
         case 3: //Tanh
             return 1 - powf(tanhf(x), 2);
         case 4: // Leaky ReLU deriv

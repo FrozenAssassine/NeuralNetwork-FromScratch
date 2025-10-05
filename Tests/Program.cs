@@ -5,6 +5,7 @@ using Tests.SceneClassification;
 using Tests.SortedListCheck;
 using Tests.NextSequencePrediction;
 using NNFromScratch.Core.Layers;
+using Tests.ImageClassification_QuickDraw;
 
 public class Program
 {
@@ -15,8 +16,10 @@ public class Program
         //Test_SortedListCheck.Run();
         //Test_SceneClassification.Run();
         //MinecraftSkinCreator.Run();
+        Test_ODR.Run();
+        //Test_XOR.Run();
         //Test_ODR.Run();
-        Test_XOR.Run();
-        //Test_ODR.Run();
+
+        Test_QuickDraw.Run();
     }
 }

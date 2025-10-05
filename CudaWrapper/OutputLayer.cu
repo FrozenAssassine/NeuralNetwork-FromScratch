@@ -28,6 +28,52 @@ __global__ void ff_outputValues(float* neuronValues, float* prevNeuronValues, fl
     }
 }
 
+
+__global__ void ff_outputValues_Softmax_GPU(
+    float* neuronValues,
+    float* prevNeuronValues,
+    float* weights,
+    float* biases,
+    int previousLayerSize,
+    int size
+) {
+    extern __shared__ float shared[];
+    float* z = shared;
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    // Step 1: Compute pre-activation z_i
+    if (idx < size) {
+        float sum = 0.0f;
+        int weightIndex = idx * previousLayerSize;
+        for (int j = 0; j < previousLayerSize; j++) {
+            sum += prevNeuronValues[j] * weights[weightIndex + j];
+        }
+        z[idx] = sum + biases[idx];
+    }
+
+    __syncthreads();
+
+    // Step 2: Find max(z)
+    float maxVal = -1e20f;
+    for (int i = 0; i < size; i++) {
+        maxVal = fmaxf(maxVal, z[i]);
+    }
+
+    // Step 3: Compute sum(exp(z_i - max))
+    float sumExp = 0.0f;
+    for (int i = 0; i < size; i++) {
+        sumExp += expf(z[i] - maxVal);
+    }
+
+    __syncthreads();
+
+    // Step 4: Compute softmax output
+    if (idx < size) {
+        neuronValues[idx] = expf(z[idx] - maxVal) / sumExp;
+    }
+}
+
+
 __global__ void output_Errors(float * errors, float * neuronValues, float* desired, int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
@@ -51,18 +97,43 @@ __global__ void output_Errors(float * errors, float * neuronValues, float* desir
 __global__ void output_WeightsBiases(float* errors, float* neuronValues, float* prevNeuronValues, float* weights, float* biases, int previousLayerSize, int size, int activationFunction, float learningRate) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < size) {
-        float derivNeuronVal = learningRate * errors[idx] * ActivationFunctions::ActivationDeriv(neuronValues[idx], activationFunction);
         int weightIndex = idx * previousLayerSize;
 
-        for (int j = 0; j < previousLayerSize; j++) {
-            atomicAdd(&weights[weightIndex + j], derivNeuronVal * prevNeuronValues[j]);
+        float grad;
+        if (activationFunction == 2) {
+            //Crossentropy + sigmoid or softmax
+			grad = learningRate * errors[idx];
         }
-        atomicAdd(&biases[idx], derivNeuronVal);
+        else {
+			grad = learningRate * errors[idx] * ActivationFunctions::ActivationDeriv(neuronValues[idx], activationFunction);
+        }
+
+        for (int j = 0; j < previousLayerSize; j++) {
+            atomicAdd(&weights[weightIndex + j], learningRate * grad * prevNeuronValues[j]);
+        }
+        atomicAdd(&biases[idx], learningRate * grad);
     }
 }
 
 void OutputLayer::FeedForward(int threadsPerBlock) {
     //Compute neuron values for output layer
+
+    //softmax index should be 2,
+    //maybe I should use an enum on cuda too :D
+	if (this->Activation == 2) {
+        int blocks = 1;
+        int threads = this->Size;
+        size_t sharedMem = this->Size * sizeof(float);
+        ff_outputValues_Softmax_GPU << <blocks, threads, sharedMem >> > (
+            this->NeuronValues,
+            this->previousLayer->NeuronValues,
+            this->Weights,
+            this->Biases,
+            this->previousLayer->Size,
+            this->Size
+            );
+    }
+
     int blocks = (this->Size + threadsPerBlock - 1) / threadsPerBlock;
     ff_outputValues << <blocks, threadsPerBlock >> > (this->NeuronValues, this->previousLayer->NeuronValues, this->Weights, this->Biases, this->previousLayer->Size, this->Activation, this->Size);
 }
