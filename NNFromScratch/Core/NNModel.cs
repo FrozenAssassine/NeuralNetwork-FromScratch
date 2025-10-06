@@ -208,4 +208,9 @@ public class NNModel
     {
         nn.Summary();
     }
+
+    public void Dispose()
+    {
+        CudaAccel.Cleanup();
+    }
 }

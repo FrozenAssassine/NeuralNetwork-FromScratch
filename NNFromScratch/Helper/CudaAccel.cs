@@ -26,6 +26,10 @@ internal static class CudaAccel
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern void Predict(float[] data, float[] prediction);
 
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void Cleanup();
+
+
 
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern void InitInputLayer(

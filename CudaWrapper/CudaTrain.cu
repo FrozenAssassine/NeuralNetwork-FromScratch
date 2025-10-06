@@ -250,6 +250,8 @@ extern "C" __declspec(dllexport) void Cleanup() {
     cudaFree(gpu_desiredValues);
     delete[] gpu_allLayer;
     //delete[] cpu_allLayer;
+
+    printf("\nCUDA: Done -> Cleaned Up Memory\n");
 }
 
 extern "C" __declspec(dllexport) void DoneTraining() {
@@ -281,6 +283,4 @@ extern "C" __declspec(dllexport) void DoneTraining() {
         printf("MemoryAdress: %d, %p, %p, %p, %p\n", i, cpuLayer->Weights, cpuLayer->Biases, cpuLayer->Errors, cpuLayer->NeuronValues);
 #endif // DEBUG
     }
-    Cleanup();
-    printf("\nCUDA: Done -> Cleaned Up Memory\n");
 }

@@ -20,8 +20,8 @@ public class Test_ODR
         //create the neural network:
         var network = NetworkBuilder.Create()
             .Stack(new InputLayer(imageWidth * imageHeight))
-            .Stack(new DenseLayer(512, ActivationType.ReLU))
-            .Stack(new DenseLayer(256, ActivationType.ReLU))
+            .Stack(new DenseLayer(512, ActivationType.TanH))
+            .Stack(new DenseLayer(256, ActivationType.TanH))
             .Stack(new OutputLayer(10, ActivationType.Softmax))
             .Build(true);
 
@@ -38,6 +38,8 @@ public class Test_ODR
         Console.ReadLine();
 
         network.Save("D:\\odr_good.cool");
+
+        network.Dispose();
     }
 
     //returns 0 for all colors and 1 for all black colors with alpha of exactly 255
