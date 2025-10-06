@@ -37,7 +37,7 @@ namespace Tests.NextSequencePrediction
 
             var network = NetworkBuilder.Create()
                .Stack(new InputLayer(sequenceLength))
-               .Stack(new DenseLayer(512, ActivationType.Relu))
+               .Stack(new DenseLayer(512, ActivationType.ReLU))
                .Stack(new OutputLayer(1, ActivationType.Softmax))
                .Build();
 

@@ -3,7 +3,7 @@
     public enum ActivationType
     {
         Sigmoid,
-        Relu,
+        ReLU,
         Softmax,
         TanH,
         LeakyRelu,

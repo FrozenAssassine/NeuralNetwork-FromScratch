@@ -14,7 +14,7 @@ namespace NNFromScratch.Core
             {
                 case ActivationType.Sigmoid:
                     return 1.0f / (1.0f + MathF.Exp(-x));
-                case ActivationType.Relu:
+                case ActivationType.ReLU:
                     return MathF.Max(0.0f, x);
                 case ActivationType.TanH:
                     return MathF.Tanh(x);
@@ -35,7 +35,7 @@ namespace NNFromScratch.Core
             {
                 case ActivationType.Sigmoid:
                     return x * (1 - x);
-                case ActivationType.Relu:
+                case ActivationType.ReLU:
                     return x > 0.0f ? 1.0f : 0.0f;
                 case ActivationType.TanH:
                     return 1 - MathF.Pow(MathF.Tanh(x), 2);

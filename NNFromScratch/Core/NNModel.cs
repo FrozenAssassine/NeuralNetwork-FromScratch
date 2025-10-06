@@ -154,12 +154,29 @@ public class NNModel
         var ms = new MemoryStream(bytes);
         nn.Load(ms);
         Console.WriteLine($"Loaded from {path}");
+
+        //load the data  to the gpu
+        if (this.useCuda)
+        {
+            //pass the references for all c# arrays to the c++ code:
+            for (int i = 0; i < layers.Length; i++)
+            {
+                layers[i].InitializeCuda(i);
+            }
+
+            Console.WriteLine("Done offloading to GPU");
+        }
     }
 
     //only use cuda evaluation while training, because gpu memory gets freed after training
     public (float percent, int count, int correct) Evaluate(float[][] x, float[][] y, bool predictOnCuda = true, bool output = true)
     {
         int correct = 0;
+
+        if(predictOnCuda && !this.useCuda)
+        {
+            throw new Exception("Could not evaluate on GPU, because cuda was disabled in the model building");
+        }
 
         if (predictOnCuda && this.useCuda)
         {

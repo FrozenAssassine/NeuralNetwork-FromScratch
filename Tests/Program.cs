@@ -20,6 +20,6 @@ public class Program
         //Test_XOR.Run();
         //Test_ODR.Run();
 
-        Test_QuickDraw.Run();
+        //Test_QuickDraw.Run();
     }
 }
