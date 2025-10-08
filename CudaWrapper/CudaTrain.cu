@@ -13,6 +13,9 @@
 #include "OutputLayer.h"
 #include "BaseLayer.h"
 
+#include "StopWatch.h"
+#include "AccuracyCalculator.h"
+
 #define DEBUG
 
 #define CUDA_CHECK(err, code) \
@@ -21,6 +24,8 @@
         exit(EXIT_FAILURE);\
     }
 
+using namespace std;
+
 const int threadsPerBlock = 32;
 
 BaseLayer** gpu_allLayer = nullptr;
@@ -28,6 +33,16 @@ BaseLayer** cpu_allLayer = nullptr;
 int allLayerCount;
 
 float * gpu_desiredValues;
+
+
+char* RepeatString(char s, int n) {
+    char* outs = new char[n];
+    for (int i = 0; i < n; i++) {
+        outs[i] = s;
+    }
+    return outs;
+}
+
 
 void PrintLayerInfo(BaseLayer * layer, const char* layerName) {
     printf("%s - Weights: %p, Biases: %p, NeuronValues: %p, Errors: %p, Size: %d\n",
@@ -46,7 +61,7 @@ void FeedForward() {
     CUDA_CHECK(err, "Feed Forward Synchronize Threads");
 }
 
-extern "C" __declspec(dllexport) void Train(float* inputs, float* desired, int size, float learningRate) {
+extern "C" __declspec(dllexport) void TrainSingle(float* inputs, float* desired, int size, float learningRate) {
     cudaError_t err;
 
     //copy the next inputs & outputs to the gpu memory
@@ -70,8 +85,7 @@ extern "C" __declspec(dllexport) void Train(float* inputs, float* desired, int s
     CUDA_CHECK(err, "Sync Training Threads");
 }
 
-//Predictions only work while training on the gpu, otherwise the data is not copied to the gpu memory.
-extern "C" __declspec(dllexport) float* Predict(float* data, float* prediction) {
+extern "C" __declspec(dllexport) void Predict(float* data, float* prediction) {
 
     cudaError_t err = cudaMemcpy(gpu_allLayer[0]->NeuronValues, data, cpu_allLayer[0]->Size * sizeof(float), cudaMemcpyHostToDevice);
     CUDA_CHECK(err, "Memcpy Inputs for Prediction");
@@ -212,6 +226,66 @@ extern "C" __declspec(dllexport) void InitOutputLayer(
     AllocateLayerMemory(gpuLayer, cpuLayer, prevSize, size, biases, weights, neuronValues, errors);
 }
 
+extern "C" __declspec(dllexport) void TrainFull(
+    float* inputX, 
+    float* desired, 
+    int epochs, 
+    int samples, //number of items to train
+    int features, //number of items per input item because 2d array is flattened
+    int outputs, //number of items per desired item because 2d array is flattened
+    float learningRate = 0.1f,
+    int loggingInterval = 100,
+    int epochInterval = 1, 
+    float evaluatePercent = 10)
+{
+    Stopwatch epochTime = new Stopwatch(true);
+    Stopwatch stepTime = new Stopwatch(true);
+    AccuracyCalculator accCalc;
+
+    for (int e = 0; e < epochs; e++) {
+
+        epochTime.Start();
+        stepTime.Start();
+        accCalc.NextEpoch();
+
+        float averageStepTime = 0;
+
+        for (int i = 0; i < samples; i++) {
+            float* x = &inputX[i * features];
+            float* y = &desired[i * outputs];
+
+            TrainSingle(x, y, features, 0.01f);
+
+            //use this, when each epoch takes longer due to more items that need to compute
+            if ((i + 1) % loggingInterval == 0)
+            {
+                stepTime.Stop();
+
+                averageStepTime += stepTime.ElapsedMilliseconds();
+                printf("Epoch %d/%d; %d/%d; (%.3fms)\n", e + 1, epochs, i + 1, samples, stepTime.ElapsedMilliseconds());
+                stepTime.Start();
+            }
+        }
+
+        //print epoch every x epochs (default: 100) => for fast training
+        if ((e + 1) % epochInterval == 0)
+        {
+            accCalc.Calculate(inputX, desired, &Predict, samples, features, outputs, 0);
+
+            printf("%s\n", RepeatString('-', 50));
+            printf("Epoch %d took %.3fms;", e + 1, epochTime.ElapsedMilliseconds());
+            accCalc.PrintAccuracy();
+            if (averageStepTime > 0) {
+                printf(" avg(%d)ms/step", (int)averageStepTime / (samples / loggingInterval));
+            }
+            printf("\n");
+
+            //dont print the last line after training => looks weird :D
+            if (e != epochs - 1)
+                printf("%s\n", RepeatString('-', 50));
+        }
+    }
+}
 
 extern "C" __declspec(dllexport) void InitDenseLayer(
     int layerIndex,

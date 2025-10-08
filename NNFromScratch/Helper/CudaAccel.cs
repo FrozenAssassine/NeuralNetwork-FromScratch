@@ -12,7 +12,7 @@ internal static class CudaAccel
 #endif
 
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
-    public static extern void Train(float[] inputs, float[] desired, int size, float learningRate);
+    public static extern void TrainSingle(float[] inputs, float[] desired, int size, float learningRate);
 
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern void Init(int totalLayers);
@@ -29,6 +29,8 @@ internal static class CudaAccel
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
     public static extern void Cleanup();
 
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
+    public static extern float[] GetOutputNeuronVals();
 
 
     [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
@@ -62,4 +64,16 @@ internal static class CudaAccel
         float[] neuronValues,
         float[] errors,
         ActivationType activation);
+    [DllImport(DDL_PATH, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void TrainFull(
+        float[] inputX,
+        float[] desired,
+        int epochs,
+        int samples,
+        int features,
+        int outputs,
+        float learningRate = 0.1f,
+        int loggingInterval = 100,
+        int epochInterval = 1,
+        float evaluatePercent = 10);
 }

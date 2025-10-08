@@ -6,15 +6,21 @@ internal class LossCalculator
 {
     private float totalLossValue = 0;
     private int lossCount = 0;
-    private NeuralNetwork nn;
-    public LossCalculator(NeuralNetwork nn)
+    private NNModel nnModel;
+    public LossCalculator(NNModel nn)
     {
-        this.nn = nn;
+        this.nnModel = nn;
     }
     public void Calculate(float[] desired)
     {
+        float[] vals;
+        if (nnModel.useCuda)
+            vals = CudaAccel.GetOutputNeuronVals();
+        else
+            vals = nnModel.nn.allLayer[nnModel.nn.allLayer.Length - 1].NeuronValues;
+
         lossCount++;
-        totalLossValue += LossHelper.MSE(nn.allLayer[nn.allLayer.Length - 1].NeuronValues, desired);
+        totalLossValue += LossHelper.MSE(vals, desired);
     }
 
     public void PrintLoss()

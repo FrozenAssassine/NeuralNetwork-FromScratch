@@ -8,8 +8,8 @@ namespace NNFromScratch.Core;
 
 public class NNModel
 {
-    private NeuralNetwork nn;
-    private bool useCuda = false;
+    public NeuralNetwork nn { get; private set; }
+    public bool useCuda { get; private set; } = false;
     private bool cudaLayersInitialized;
     private BaseLayer[] layers;
     public NNModel(BaseLayer[] layers, bool useCuda = true)
@@ -73,14 +73,38 @@ public class NNModel
         if (useCuda)
             useCuda = CudaAccel.CheckCuda();
 
-        LossCalculator lossCalc = new LossCalculator(nn);
-        AccuracyCalculator accCalc = new AccuracyCalculator(nn);
+        LossCalculator lossCalc = new(this);
+        AccuracyCalculator accCalc = new(nn);
 
         Console.WriteLine(new string('-', 50) + "\n");
         float[] accuracys = new float[epochs];
         var trainingTime = BenchmarkExtension.Benchmark(() =>
         {
-            int trainDataCount = (int)(inputs.Length * (100 - evaluatePercent)) / 100;
+            int samples = (int)(inputs.Length * (100 - evaluatePercent)) / 100;
+
+            if (useCuda)
+            {
+                //c++ code needs 1d array, so flatten is good. 
+                var inputFlattened = ArrayHelper.Flatten(inputs);
+                var desiredFlattened = ArrayHelper.Flatten(desired);
+
+                CudaAccel.TrainFull(
+                    inputFlattened.arr, 
+                    desiredFlattened.arr, 
+                    epochs, 
+                    samples,
+                    inputFlattened.features,
+                    desiredFlattened.features,
+                    learningRate,
+                    loggingInterval,
+                    epochInterval,
+                    evaluatePercent);
+                return;
+            }
+
+
+            //old training loop.
+            //Calls cuda train for every item in the dataset
 
             Stopwatch epochTime = new Stopwatch();
             Stopwatch stepTimeSW = new Stopwatch();
@@ -92,10 +116,10 @@ public class NNModel
                 lossCalc.NextEpoch();
                 accCalc.NextEpoch();
 
-                for (int i = 0; i < trainDataCount; i++)
+                for (int i = 0; i < samples; i++)
                 {
                     if(useCuda)
-                        CudaAccel.Train(inputs[i], desired[i], inputs.Length, learningRate);
+                        CudaAccel.TrainSingle(inputs[i], desired[i], inputs.Length, learningRate);
                     else
                         nn.Train_CPU(inputs[i], desired[i], learningRate);
 
@@ -107,7 +131,7 @@ public class NNModel
                         stepTimeSW.Stop();
 
                         averageStepTime += stepTimeSW.ElapsedMilliseconds;
-                        Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1}/{trainDataCount}; ({stepTimeSW.ElapsedMilliseconds}ms, {stepTimeSW.ElapsedTicks}ticks)");
+                        Console.WriteLine($"Epoch {e + 1}/{epochs}; {i + 1}/{samples}; ({stepTimeSW.ElapsedMilliseconds}ms, {stepTimeSW.ElapsedTicks}ticks)");
                         stepTimeSW.Restart();
                     }
                 }
@@ -115,7 +139,7 @@ public class NNModel
                 //print epoch every x epochs (default: 100) => for fast training
                 if ((e + 1) % epochInterval == 0)
                 {
-                    accCalc.Calculate(inputs, desired, trainDataCount, useCuda);
+                    accCalc.Calculate(inputs, desired, samples, useCuda);
 
                     Console.WriteLine(new string('-', 50));
                     Console.WriteLine($"Epoch {e + 1} took {epochTime.ElapsedMilliseconds}ms; " + (averageStepTime > 0 ? $"avg({(int)averageStepTime / (inputs.Length / loggingInterval)}ms/step" : ""));

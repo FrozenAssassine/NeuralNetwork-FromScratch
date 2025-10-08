@@ -41,7 +41,7 @@ namespace NNFromScratch.Core.Layers
             if(Weights == null)
                 Console.WriteLine($"Input Layer of {Size} Neurons");
             else
-            Console.WriteLine($"Input Layer of {Size} Neurons and {Weights.Length} Weights");
+                Console.WriteLine($"Input Layer of {Size} Neurons and {Weights.Length} Weights");
         }
 
         public override void Train(float[] desiredValues, float learningRate)

@@ -24,6 +24,8 @@ namespace NNFromScratch.Core
                     return x > 0.0f ? x : (MathF.Exp(x) - 1.0f);
                 case ActivationType.Swish:
                     return x / (1.0f + MathF.Exp(-x));
+                case ActivationType.Softmax:
+                    throw new Exception("Softmax is handled separately.");
                 default:
                     return x;
             }
@@ -46,6 +48,8 @@ namespace NNFromScratch.Core
                 case ActivationType.Swish:
                     float sigma = 1.0f / (1.0f + MathF.Exp(-x));
                     return sigma * (1.0f + x * (1.0f - sigma));
+                case ActivationType.Softmax:
+                    throw new Exception("Softmax derivative is handled separately.");
                 default:
                     return 0.0f;
             }

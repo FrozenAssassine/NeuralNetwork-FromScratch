@@ -83,6 +83,7 @@
     <CudaCompile Include="OutputLayer.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AccuracyCalculator.h" />
     <ClInclude Include="ActivationFunctions.h" />
     <ClInclude Include="BaseLayer.h" />
     <ClInclude Include="InputLayer.h" />
@@ -91,6 +92,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="InputLayer.cu" />
+    <ClCompile Include="StopWatch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

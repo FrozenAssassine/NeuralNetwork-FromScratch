@@ -16,7 +16,7 @@ internal class AccuracyCalculator
     }
     public void Calculate(float[][] inputs, float[][] desired, int startIndex = 0, bool cuda = false)
     {
-        float[] prediction = new float[10];
+        float[] prediction = new float[desired[0].Length];
         for (int i = startIndex; i < inputs.Length; i++)
         {
             if (cuda)
